@@ -1,0 +1,48 @@
+{
+  "scenarioName": "SimpleTest",
+  "simulationDurationSec": 3600,
+  "nodes": [
+    {
+      "id": "nodeA",
+      "type": "Stationary",
+      "lat": 40.7128,
+      "lon": -74.0060,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+    {
+      "id": "nodeB",
+      "type": "Stationary",
+      "lat": 51.5074,
+      "lon": -0.1278,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    }
+  ],
+  "links": [
+    {
+      "id": "link1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "nodeA",
+      "dstNodeId": "nodeB",
+      "nominalLatencyMs": 50.0,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0.0,
+      "outageDuration": { "distribution": "fixed", "value": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.1 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    }
+  ],
+  "c2Messages": [
+    {
+      "id": "msg1",
+      "srcNodeId": "nodeA",
+      "dstNodeId": "nodeB",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 10.0
+    }
+  ]
+}

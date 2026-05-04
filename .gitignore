@@ -1,0 +1,44 @@
+# MATLAB generated files
+*.asv
+*.m~
+*.mex*
+*.mlapp
+*.mlx
+*.slx
+*.slxc
+*.p
+*.mat
+*.fig
+*.autosave
+
+# MATLAB code generation
+codegen/
+slprj/
+
+# Simulink cache
+*.slxc
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor backup files
+*~
+*.bak
+*.swp
+*.swo
+
+# Temp files created by tests
+/tmp/
+
+# Output directories (simulation results)
+output/
+results/
+
+# Environment / secrets
+.env
+*.key
