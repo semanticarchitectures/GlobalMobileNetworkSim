@@ -339,6 +339,37 @@ classdef LinkRegistry < handle
             params = obj.links.backgroundTraffic{idx};
         end
 
+        function frac = getBgLoadFraction(obj, linkId)
+            % getBgLoadFraction  Return the current background load fraction.
+            %
+            %   frac = lr.getBgLoadFraction(linkId)
+            %
+            % Requirements: 3.1, 3.4
+
+            idx  = obj.indexOf(linkId);
+            frac = obj.links.bgLoadFraction(idx);
+        end
+
+        function linkId = getLinksBetweenNodes(obj, srcNodeId, dstNodeId)
+            % getLinksBetweenNodes  Return the ID of the first active link
+            %                       from srcNodeId to dstNodeId.
+            %
+            %   linkId = lr.getLinksBetweenNodes(srcNodeId, dstNodeId)
+            %
+            %   Returns the link ID string if found, or '' if no such link exists.
+            %   Used by SimController to map path hops to link IDs for stats.
+
+            srcStr = string(srcNodeId);
+            dstStr = string(dstNodeId);
+            mask   = (obj.links.srcNodeId == srcStr) & (obj.links.dstNodeId == dstStr);
+            idxs   = find(mask, 1);
+            if isempty(idxs)
+                linkId = '';
+            else
+                linkId = char(obj.links.id(idxs));
+            end
+        end
+
         function ids = getActiveLinkIds(obj)
             % getActiveLinkIds  Return string array of IDs of currently active links.
             %
@@ -350,6 +381,46 @@ classdef LinkRegistry < handle
             % Requirements: 6.1
 
             ids = obj.links.id(obj.links.isActive);
+        end
+
+        function linkId = getLinksBetweenNodes(obj, srcNodeId, dstNodeId)
+            % getLinksBetweenNodes  Return the link ID connecting two adjacent nodes.
+            %
+            %   linkId = lr.getLinksBetweenNodes(srcNodeId, dstNodeId)
+            %
+            %   Returns the link ID string of the first active link connecting
+            %   srcNodeId to dstNodeId (in either direction).  Returns an empty
+            %   string if no such link is found.
+            %
+            % Requirements: 9.1, 9.2
+
+            srcStr = string(srcNodeId);
+            dstStr = string(dstNodeId);
+
+            % Search for a link connecting these two nodes (either direction).
+            for k = 1:obj.n
+                if (obj.links.srcNodeId(k) == srcStr && obj.links.dstNodeId(k) == dstStr) || ...
+                   (obj.links.srcNodeId(k) == dstStr && obj.links.dstNodeId(k) == srcStr)
+                    linkId = char(obj.links.id(k));
+                    return;
+                end
+            end
+
+            % No link found.
+            linkId = '';
+        end
+
+        function frac = getBgLoadFraction(obj, linkId)
+            % getBgLoadFraction  Return the current background load fraction for a link.
+            %
+            %   frac = lr.getBgLoadFraction(linkId)
+            %
+            %   Returns the current bgLoadFraction value for the specified link.
+            %
+            % Requirements: 9.1, 9.2
+
+            idx  = obj.indexOf(linkId);
+            frac = obj.links.bgLoadFraction(idx);
         end
 
         function info = getLinkInfo(obj, linkId)

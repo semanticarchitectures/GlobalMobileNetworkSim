@@ -176,14 +176,14 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 1: Scenario round-trip`
     - Generator: random scenario structs with 1–50 nodes and 0–200 links; assert `load(save(scenario))` is field-for-field equivalent to original
 
-- [ ] 11. Implement statistics collection and report writing
-  - [ ] 11.1 Implement statistics accumulation in `SimController`
+- [x] 11. Implement statistics collection and report writing
+  - [x] 11.1 Implement statistics accumulation in `SimController`
     - Accumulate per-run counters: total C2 messages scheduled, delivered, failed; per-link outage durations, C2 message counts, background load samples
     - Collect all delivered message latencies into a vector for distribution statistics
     - Record wall-clock start time at `run()` entry and compute duration at completion
     - _Requirements: 9.1, 9.2, 9.3_
 
-  - [ ] 11.2 Implement `io.ReportWriter`
+  - [x] 11.2 Implement `io.ReportWriter`
     - Write `+io/ReportWriter.m` as a handle class
     - Implement `writeEventLog(eventLog)` writing CSV with columns `eventId,simTimeSec,eventType,linkId,msgId,srcNodeId,dstNodeId,latencyMs,reason`
     - Implement `writeStatisticsReport(stats)` writing JSON matching the schema in §4.3, including `agentFidelity` summary block
@@ -197,15 +197,15 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 19: Statistics report completeness`
     - Generator: random simulation results with 1–100 links; assert all required top-level fields and a per-link entry for every link are present in the output JSON
 
-- [ ] 12. Implement visualization functions
-  - [ ] 12.1 Implement `io.PlotFunctions`
+- [x] 12. Implement visualization functions
+  - [x] 12.1 Implement `io.PlotFunctions`
     - Write `+io/PlotFunctions.m` with static methods `latencyHistogram(statsReport)`, `outageGantt(statsReport, linkIds)`, and `fidelityBoxPlot(evalReports)`
     - `latencyHistogram`: plot histogram of delivered C2 message latencies from `statsReport.latency` data
     - `outageGantt`: plot per-link outage timelines as a Gantt-style chart over the simulation time span
     - `fidelityBoxPlot`: plot per-agent fidelity scores across multiple runs as a box-and-whisker chart
     - _Requirements: 9.4, 9.5, 15.5_
 
-- [ ] 13. Checkpoint — Ensure all tests pass
+- [x] 13. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 14. Implement agent role loading and LLM client

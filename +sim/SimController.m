@@ -22,6 +22,7 @@ classdef SimController < handle
         eventCalendar   % sim.EventCalendar instance
         simTimeSec      % current simulation time (double, seconds)
         wallClockStart  % tic value recorded at run() entry
+        wallClockDurationSec  % wall-clock duration of the run (set at SIM_END)
         isPaused        % logical pause flag
         isStopped       % logical stop flag
         eventLog        % growing struct array of event log entries
@@ -37,6 +38,19 @@ classdef SimController < handle
 
         % Accumulated latencies of delivered C2 messages (for statistics)
         deliveredLatenciesMs  % double array
+    end
+
+    % -----------------------------------------------------------------
+    % Private properties
+    % -----------------------------------------------------------------
+    properties (Access = private)
+        % Per-link statistics (containers.Map: linkId -> struct)
+        % Each entry has:
+        %   c2MessagesRouted   (uint64)  — C2 messages routed through this link
+        %   outageDurationSec  (double)  — accumulated total outage duration
+        %   outageStartTimeSec (double)  — sim time when current outage started (NaN if not in outage)
+        %   bgLoadSamples      (double array) — background load fraction samples
+        linkStats
     end
 
     % -----------------------------------------------------------------
@@ -64,11 +78,12 @@ classdef SimController < handle
                     'scenario must have a simulationDurationSec field.');
             end
 
-            sc.scenario       = scenario;
-            sc.eventCalendar  = sim.EventCalendar();
-            sc.simTimeSec     = 0.0;
-            sc.wallClockStart = [];
-            sc.isPaused       = false;
+            sc.scenario              = scenario;
+            sc.eventCalendar         = sim.EventCalendar();
+            sc.simTimeSec            = 0.0;
+            sc.wallClockStart        = [];
+            sc.wallClockDurationSec  = NaN;
+            sc.isPaused              = false;
             sc.isStopped      = false;
             sc.nextEventId    = uint64(1);
 
@@ -96,12 +111,25 @@ classdef SimController < handle
                 sc.outageEngine  = network.OutageEngine(sc.linkRegistry, sc.eventCalendar);
                 sc.bgTrafficModel = network.BackgroundTrafficModel(sc.linkRegistry, sc.eventCalendar);
                 sc.routingEngine = network.RoutingEngine(sc.nodeRegistry, sc.linkRegistry);
+
+                % Initialise per-link statistics map.
+                sc.linkStats = containers.Map('KeyType', 'char', 'ValueType', 'any');
+                linkIds = sc.linkRegistry.getLinkIds();
+                for k = 1:numel(linkIds)
+                    lkId = char(linkIds(k));
+                    entry.c2MessagesRouted   = uint64(0);
+                    entry.outageDurationSec  = 0.0;
+                    entry.outageStartTimeSec = NaN;
+                    entry.bgLoadSamples      = double.empty(1, 0);
+                    sc.linkStats(lkId) = entry;
+                end
             else
                 sc.nodeRegistry   = [];
                 sc.linkRegistry   = [];
                 sc.outageEngine   = [];
                 sc.bgTrafficModel = [];
                 sc.routingEngine  = [];
+                sc.linkStats      = containers.Map('KeyType', 'char', 'ValueType', 'any');
             end
         end
     end
@@ -233,6 +261,114 @@ classdef SimController < handle
             n = sc.eventCalendar.eventCount();
         end
 
+        function report = buildStatsReport(sc)
+            % buildStatsReport  Build a Statistics_Report struct matching §4.3.
+            %
+            %   report = sc.buildStatsReport()
+            %
+            % Returns a struct with fields:
+            %   scenarioName        — from scenario.scenarioName or 'unnamed'
+            %   simStartTimeSec     — always 0
+            %   simEndTimeSec       — current simTimeSec
+            %   wallClockDurationSec — wall-clock run duration (NaN if not run)
+            %   c2Messages          — struct: scheduled, delivered, failed
+            %   latency             — struct: meanMs, medianMs, p95Ms
+            %   perLink             — struct array, one per link
+            %   agentFidelity       — struct: mean, min, max (placeholder NaN)
+            %
+            % Requirements: 9.1, 9.2, 9.3
+
+            % Scenario name
+            if isfield(sc.scenario, 'scenarioName') && ...
+                    ~isempty(sc.scenario.scenarioName)
+                report.scenarioName = sc.scenario.scenarioName;
+            else
+                report.scenarioName = 'unnamed';
+            end
+
+            % Timing
+            report.simStartTimeSec    = 0;
+            report.simEndTimeSec      = sc.simTimeSec;
+            report.wallClockDurationSec = sc.wallClockDurationSec;
+
+            % C2 message counts
+            report.c2Messages.scheduled = double(sc.stats.c2MessagesTx);
+            report.c2Messages.delivered = double(sc.stats.c2MessagesRx);
+            report.c2Messages.failed    = double(sc.stats.c2MessagesFail);
+
+            % Latency statistics
+            lats = sc.deliveredLatenciesMs;
+            if isempty(lats)
+                report.latency.meanMs   = NaN;
+                report.latency.medianMs = NaN;
+                report.latency.p95Ms    = NaN;
+            else
+                report.latency.meanMs   = mean(lats);
+                report.latency.medianMs = median(lats);
+                report.latency.p95Ms    = prctile(lats, 95);
+            end
+
+            % Per-link statistics
+            if ~isempty(sc.linkRegistry)
+                linkIds = sc.linkRegistry.getLinkIds();
+                nLinks  = numel(linkIds);
+                % Pre-build a struct array
+                perLinkProto.linkId                  = '';
+                perLinkProto.meanEffectiveBwBps       = NaN;
+                perLinkProto.meanBgLoadFraction       = NaN;
+                perLinkProto.totalC2MessagesRouted    = 0;
+                perLinkProto.totalOutageDurationSec   = 0;
+                perLinkProto.outageFraction           = 0;
+                perLink = repmat(perLinkProto, nLinks, 1);
+
+                for k = 1:nLinks
+                    lkId = char(linkIds(k));
+                    perLink(k).linkId = lkId;
+
+                    % Mean effective bandwidth from registry
+                    perLink(k).meanEffectiveBwBps = ...
+                        sc.linkRegistry.getEffectiveBandwidth(lkId);
+
+                    % Per-link accumulated stats
+                    if sc.linkStats.isKey(lkId)
+                        entry = sc.linkStats(lkId);
+
+                        % Mean background load fraction
+                        if isempty(entry.bgLoadSamples)
+                            perLink(k).meanBgLoadFraction = NaN;
+                        else
+                            perLink(k).meanBgLoadFraction = mean(entry.bgLoadSamples);
+                        end
+
+                        perLink(k).totalC2MessagesRouted  = double(entry.c2MessagesRouted);
+                        perLink(k).totalOutageDurationSec = entry.outageDurationSec;
+
+                        % Outage fraction
+                        if sc.simTimeSec > 0
+                            perLink(k).outageFraction = ...
+                                entry.outageDurationSec / sc.simTimeSec;
+                        else
+                            perLink(k).outageFraction = 0;
+                        end
+                    end
+                end
+                report.perLink = perLink;
+            else
+                report.perLink = struct( ...
+                    'linkId', {}, ...
+                    'meanEffectiveBwBps', {}, ...
+                    'meanBgLoadFraction', {}, ...
+                    'totalC2MessagesRouted', {}, ...
+                    'totalOutageDurationSec', {}, ...
+                    'outageFraction', {});
+            end
+
+            % Agent fidelity placeholder (wired in Task 18.1)
+            report.agentFidelity.mean = NaN;
+            report.agentFidelity.min  = NaN;
+            report.agentFidelity.max  = NaN;
+        end
+
     end
 
     % -----------------------------------------------------------------
@@ -359,6 +495,20 @@ classdef SimController < handle
                 rxEv.payload = rxPayload;
                 sc.eventCalendar.schedule(rxEv);
                 sc.appendLog(event, '', msgId, srcId, dstId, latencyMs, '');
+
+                % Accumulate per-link C2 message routed counts.
+                if ~isempty(sc.linkRegistry) && numel(path) >= 2
+                    for hop = 1:(numel(path) - 1)
+                        hopSrc = path{hop};
+                        hopDst = path{hop + 1};
+                        lkId = sc.linkRegistry.getLinksBetweenNodes(hopSrc, hopDst);
+                        if ~isempty(lkId) && sc.linkStats.isKey(lkId)
+                            entry = sc.linkStats(lkId);
+                            entry.c2MessagesRouted = entry.c2MessagesRouted + uint64(1);
+                            sc.linkStats(lkId) = entry;
+                        end
+                    end
+                end
             end
         end
 
@@ -415,6 +565,14 @@ classdef SimController < handle
                 sc.outageEngine.scheduleOutageEnd(linkId, sc.simTimeSec);
             end
 
+            % Record outage start time for duration accumulation.
+            lkIdChar = char(linkId);
+            if ~isempty(lkIdChar) && sc.linkStats.isKey(lkIdChar)
+                entry = sc.linkStats(lkIdChar);
+                entry.outageStartTimeSec = sc.simTimeSec;
+                sc.linkStats(lkIdChar) = entry;
+            end
+
             sc.appendLog(event, linkId, '', '', '', NaN, '');
         end
 
@@ -439,6 +597,18 @@ classdef SimController < handle
                 sc.outageEngine.scheduleNextOutage(linkId, sc.simTimeSec);
             end
 
+            % Accumulate outage duration.
+            lkIdChar = char(linkId);
+            if ~isempty(lkIdChar) && sc.linkStats.isKey(lkIdChar)
+                entry = sc.linkStats(lkIdChar);
+                if ~isnan(entry.outageStartTimeSec)
+                    duration = sc.simTimeSec - entry.outageStartTimeSec;
+                    entry.outageDurationSec  = entry.outageDurationSec + duration;
+                    entry.outageStartTimeSec = NaN;
+                    sc.linkStats(lkIdChar) = entry;
+                end
+            end
+
             sc.appendLog(event, linkId, '', '', '', NaN, '');
         end
 
@@ -457,6 +627,16 @@ classdef SimController < handle
                 sc.bgTrafficModel.resample(linkId, sc.simTimeSec);
             end
 
+            % Collect background load sample after resample.
+            lkIdChar = char(linkId);
+            if ~isempty(lkIdChar) && ~isempty(sc.linkRegistry) && ...
+                    sc.linkStats.isKey(lkIdChar)
+                frac  = sc.linkRegistry.getBgLoadFraction(linkId);
+                entry = sc.linkStats(lkIdChar);
+                entry.bgLoadSamples(end + 1) = frac;
+                sc.linkStats(lkIdChar) = entry;
+            end
+
             sc.appendLog(event, linkId, '', '', '', NaN, '');
         end
 
@@ -470,6 +650,9 @@ classdef SimController < handle
 
         function handleSimEnd(sc, event)
             sc.appendLog(event, '', '', '', '', NaN, '');
+            if ~isempty(sc.wallClockStart)
+                sc.wallClockDurationSec = toc(sc.wallClockStart);
+            end
             sc.isStopped = true;
         end
 

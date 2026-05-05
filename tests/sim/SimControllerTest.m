@@ -362,6 +362,113 @@ classdef SimControllerTest < matlab.unittest.TestCase
                 'c2MessagesRx should be 0 when no path exists.');
         end
 
+        % --- Test 9 (Task 11.1): buildStatsReport() returns struct with all required fields ---
+        function testBuildStatsReportHasRequiredFields(testCase)
+            % Build a network scenario with one C2 message and run it.
+            scenario = SimControllerTest.makeNetworkScenario(100);
+            scenario.scenarioName = 'test-scenario';
+
+            msg.id               = 'msg-stats';
+            msg.srcNodeId        = 'nodeA';
+            msg.dstNodeId        = 'nodeB';
+            msg.sizeBytes        = 512;
+            msg.scheduledTimeSec = 1.0;
+            scenario.c2Messages  = msg;
+
+            sc = sim.SimController(scenario);
+            sc.run();
+
+            report = sc.buildStatsReport();
+
+            % Verify top-level fields exist
+            testCase.verifyTrue(isstruct(report), ...
+                'buildStatsReport() should return a struct.');
+            testCase.verifyTrue(isfield(report, 'scenarioName'), ...
+                'report should have scenarioName field.');
+            testCase.verifyTrue(isfield(report, 'simStartTimeSec'), ...
+                'report should have simStartTimeSec field.');
+            testCase.verifyTrue(isfield(report, 'simEndTimeSec'), ...
+                'report should have simEndTimeSec field.');
+            testCase.verifyTrue(isfield(report, 'wallClockDurationSec'), ...
+                'report should have wallClockDurationSec field.');
+            testCase.verifyTrue(isfield(report, 'c2Messages'), ...
+                'report should have c2Messages field.');
+            testCase.verifyTrue(isfield(report, 'latency'), ...
+                'report should have latency field.');
+            testCase.verifyTrue(isfield(report, 'perLink'), ...
+                'report should have perLink field.');
+            testCase.verifyTrue(isfield(report, 'agentFidelity'), ...
+                'report should have agentFidelity field.');
+
+            % Verify c2Messages sub-fields
+            testCase.verifyTrue(isfield(report.c2Messages, 'scheduled'), ...
+                'c2Messages should have scheduled field.');
+            testCase.verifyTrue(isfield(report.c2Messages, 'delivered'), ...
+                'c2Messages should have delivered field.');
+            testCase.verifyTrue(isfield(report.c2Messages, 'failed'), ...
+                'c2Messages should have failed field.');
+
+            % Verify latency sub-fields
+            testCase.verifyTrue(isfield(report.latency, 'meanMs'), ...
+                'latency should have meanMs field.');
+            testCase.verifyTrue(isfield(report.latency, 'medianMs'), ...
+                'latency should have medianMs field.');
+            testCase.verifyTrue(isfield(report.latency, 'p95Ms'), ...
+                'latency should have p95Ms field.');
+
+            % Verify agentFidelity sub-fields
+            testCase.verifyTrue(isfield(report.agentFidelity, 'mean'), ...
+                'agentFidelity should have mean field.');
+            testCase.verifyTrue(isfield(report.agentFidelity, 'min'), ...
+                'agentFidelity should have min field.');
+            testCase.verifyTrue(isfield(report.agentFidelity, 'max'), ...
+                'agentFidelity should have max field.');
+
+            % Verify perLink has one entry for the one link
+            testCase.verifyEqual(numel(report.perLink), 1, ...
+                'perLink should have one entry for the one-link scenario.');
+            testCase.verifyTrue(isfield(report.perLink, 'linkId'), ...
+                'perLink entry should have linkId field.');
+            testCase.verifyTrue(isfield(report.perLink, 'meanEffectiveBwBps'), ...
+                'perLink entry should have meanEffectiveBwBps field.');
+            testCase.verifyTrue(isfield(report.perLink, 'meanBgLoadFraction'), ...
+                'perLink entry should have meanBgLoadFraction field.');
+            testCase.verifyTrue(isfield(report.perLink, 'totalC2MessagesRouted'), ...
+                'perLink entry should have totalC2MessagesRouted field.');
+            testCase.verifyTrue(isfield(report.perLink, 'totalOutageDurationSec'), ...
+                'perLink entry should have totalOutageDurationSec field.');
+            testCase.verifyTrue(isfield(report.perLink, 'outageFraction'), ...
+                'perLink entry should have outageFraction field.');
+
+            % Verify scenario name is captured
+            testCase.verifyEqual(report.scenarioName, 'test-scenario', ...
+                'scenarioName should match scenario.scenarioName.');
+
+            % Verify c2Messages counts are correct (1 TX, 1 RX, 0 fail)
+            testCase.verifyEqual(report.c2Messages.scheduled, 1, ...
+                'c2Messages.scheduled should be 1.');
+            testCase.verifyEqual(report.c2Messages.delivered, 1, ...
+                'c2Messages.delivered should be 1.');
+            testCase.verifyEqual(report.c2Messages.failed, 0, ...
+                'c2Messages.failed should be 0.');
+
+            % Verify latency is finite (one delivered message)
+            testCase.verifyTrue(isfinite(report.latency.meanMs), ...
+                'latency.meanMs should be finite after one delivered message.');
+        end
+
+        % --- Test 10 (Task 11.1): wallClockDurationSec is positive finite after run ---
+        function testWallClockDurationSecIsPositiveFinite(testCase)
+            scenario = SimControllerTest.makeNetworkScenario(10);
+            sc = sim.SimController(scenario);
+            sc.run();
+
+            testCase.verifyTrue(isfinite(sc.wallClockDurationSec), ...
+                'wallClockDurationSec should be finite after run().');
+            testCase.verifyGreaterThan(sc.wallClockDurationSec, 0, ...
+                'wallClockDurationSec should be positive after run().');
+        end
+
     end
 
 end
