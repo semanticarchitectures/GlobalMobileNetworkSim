@@ -6,8 +6,11 @@ classdef ScenarioLoader
     % Usage:
     %   scenario = io.ScenarioLoader.load(filePath)
     %   io.ScenarioLoader.save(scenario, filePath)
+    %   refBehavior = io.ScenarioLoader.loadReferenceBehavior(filePath)
+    %   io.ScenarioLoader.saveReferenceBehavior(refBehavior, filePath)
     %
-    % Requirements: 7.1, 7.2, 7.3, 7.4, 1.4, 2.7, 3.5, 10.4
+    % Requirements: 7.1, 7.2, 7.3, 7.4, 1.4, 2.7, 3.5, 10.4, 14.1, 14.2,
+    %               14.3, 14.4, 14.5
 
     methods (Static)
 
@@ -124,6 +127,81 @@ classdef ScenarioLoader
                     io.ScenarioLoader.validateC2Message(msg);
                 end
             end
+
+            % --- Load reference behavior (optional) ---
+            % Requirements: 14.1, 14.2, 14.4
+            if isfield(scenario, 'referenceBehaviorFile') && ...
+                    ~isempty(scenario.referenceBehaviorFile) && ...
+                    ischar(scenario.referenceBehaviorFile)
+
+                refFilePath = scenario.referenceBehaviorFile;
+
+                % Resolve relative path relative to the scenario file's directory
+                [scenarioDir, ~, ~] = fileparts(filePath);
+                if ~isempty(scenarioDir)
+                    % Detect absolute paths: starts with / (Unix) or X: (Windows)
+                    isAbsPath = (numel(refFilePath) > 0 && refFilePath(1) == '/') || ...
+                                (numel(refFilePath) > 1 && refFilePath(2) == ':');
+                    if ~isAbsPath
+                        refFilePath = fullfile(scenarioDir, refFilePath);
+                    end
+                end
+
+                refBehavior = io.ScenarioLoader.loadReferenceBehavior(refFilePath);
+
+                % Validate that referenced roles exist in agent definitions;
+                % warn (do not halt) for roles with no assigned agent.
+                % Requirements: 14.2, 14.4
+                if isfield(scenario, 'agents') && ~isempty(scenario.agents) && ...
+                        ~(isnumeric(scenario.agents) && isempty(scenario.agents))
+                    agents = scenario.agents;
+                    if isstruct(agents)
+                        nAgents = numel(agents);
+                        getAgent = @(k) agents(k);
+                    elseif iscell(agents)
+                        nAgents = numel(agents);
+                        getAgent = @(k) agents{k};
+                    else
+                        nAgents = 0;
+                        getAgent = @(k) [];
+                    end
+
+                    % Collect agent role names
+                    agentRoles = strings(nAgents, 1);
+                    for k = 1:nAgents
+                        ag = getAgent(k);
+                        if isfield(ag, 'role')
+                            agentRoles(k) = string(ag.role);
+                        end
+                    end
+
+                    % Check each referenced role
+                    roles = refBehavior.roles;
+                    if isstruct(roles)
+                        nRoles = numel(roles);
+                        getRole = @(k) roles(k);
+                    elseif iscell(roles)
+                        nRoles = numel(roles);
+                        getRole = @(k) roles{k};
+                    else
+                        nRoles = 0;
+                        getRole = @(k) [];
+                    end
+
+                    for k = 1:nRoles
+                        rEntry = getRole(k);
+                        roleName = string(rEntry.role);
+                        if ~any(agentRoles == roleName)
+                            warning('netsim:agent:unassignedRole', ...
+                                'Role "%s" has no assigned agent', roleName);
+                        end
+                    end
+                end
+
+                scenario.referenceBehavior = refBehavior;
+            else
+                scenario.referenceBehavior = [];
+            end
         end
 
         % ------------------------------------------------------------------
@@ -145,6 +223,143 @@ classdef ScenarioLoader
                 jsonText = jsonencode(scenario, 'PrettyPrint', true);
             catch
                 jsonText = jsonencode(scenario);
+            end
+
+            fid = fopen(filePath, 'w');
+            if fid == -1
+                error('netsim:io:fileWriteError', ...
+                    'Cannot open file for writing: %s', filePath);
+            end
+            try
+                fwrite(fid, jsonText, 'char');
+            catch ME
+                fclose(fid);
+                rethrow(ME);
+            end
+            fclose(fid);
+        end
+
+        % ------------------------------------------------------------------
+        % loadReferenceBehavior
+        % ------------------------------------------------------------------
+
+        function refBehavior = loadReferenceBehavior(filePath)
+            % loadReferenceBehavior  Read and validate a reference behavior JSON file.
+            %
+            %   refBehavior = io.ScenarioLoader.loadReferenceBehavior(filePath)
+            %
+            %   Reads the JSON file at filePath, validates the required top-level
+            %   fields (scenarioName, roles), and validates each role entry and
+            %   its actions.  Returns the validated reference behavior struct.
+            %
+            %   Throws:
+            %     netsim:io:jsonSyntaxError  — JSON parse failure
+            %     netsim:io:missingField     — missing required field
+            %
+            % Requirements: 14.3, 14.5
+
+            % --- Read and parse JSON ---
+            try
+                rawText = fileread(filePath);
+                refBehavior = jsondecode(rawText);
+            catch ME
+                error('netsim:io:jsonSyntaxError', ...
+                    'File: %s — %s', filePath, ME.message);
+            end
+
+            % --- Validate required top-level fields ---
+            requiredTopFields = {'scenarioName', 'roles'};
+            for fi = 1:numel(requiredTopFields)
+                fn = requiredTopFields{fi};
+                if ~isfield(refBehavior, fn)
+                    error('netsim:io:missingField', ...
+                        'Reference behavior file "%s": missing required field "%s"', ...
+                        filePath, fn);
+                end
+            end
+
+            % --- Validate each role entry ---
+            roles = refBehavior.roles;
+            if isstruct(roles)
+                nRoles = numel(roles);
+                getRole = @(k) roles(k);
+            elseif iscell(roles)
+                nRoles = numel(roles);
+                getRole = @(k) roles{k};
+            else
+                nRoles = 0;
+                getRole = @(k) [];
+            end
+
+            for k = 1:nRoles
+                rEntry = getRole(k);
+
+                % Validate role-level required fields
+                roleRequiredFields = {'role', 'ordering', 'actions'};
+                for fi = 1:numel(roleRequiredFields)
+                    fn = roleRequiredFields{fi};
+                    if ~isfield(rEntry, fn)
+                        error('netsim:io:missingField', ...
+                            'Reference behavior role %d: missing required field "%s"', ...
+                            k, fn);
+                    end
+                end
+
+                % Validate ordering value
+                orderingVal = string(rEntry.ordering);
+                if ~any(orderingVal == ["strict", "unordered"])
+                    error('netsim:io:missingField', ...
+                        'Reference behavior role "%s": ordering must be "strict" or "unordered", got "%s"', ...
+                        string(rEntry.role), orderingVal);
+                end
+
+                % Validate each action
+                actions = rEntry.actions;
+                if isstruct(actions)
+                    nActions = numel(actions);
+                    getAction = @(j) actions(j);
+                elseif iscell(actions)
+                    nActions = numel(actions);
+                    getAction = @(j) actions{j};
+                else
+                    nActions = 0;
+                    getAction = @(j) [];
+                end
+
+                for j = 1:nActions
+                    act = getAction(j);
+                    actionRequiredFields = {'actionType', 'triggerEvent', 'expectedTimeSec'};
+                    for fi = 1:numel(actionRequiredFields)
+                        fn = actionRequiredFields{fi};
+                        if ~isfield(act, fn)
+                            error('netsim:io:missingField', ...
+                                'Reference behavior role "%s", action %d: missing required field "%s"', ...
+                                string(rEntry.role), j, fn);
+                        end
+                    end
+                end
+            end
+        end
+
+        % ------------------------------------------------------------------
+        % saveReferenceBehavior
+        % ------------------------------------------------------------------
+
+        function saveReferenceBehavior(refBehavior, filePath)
+            % saveReferenceBehavior  Serialize a reference behavior struct to JSON.
+            %
+            %   io.ScenarioLoader.saveReferenceBehavior(refBehavior, filePath)
+            %
+            %   Encodes the reference behavior struct as JSON and writes it to
+            %   filePath.  Uses pretty-printing when supported (MATLAB R2021a+).
+            %
+            % Requirements: 14.3, 14.5
+
+            % Try pretty-print first (R2021a+), fall back to plain jsonencode
+            try
+                jsonText = jsonencode(refBehavior, 'PrettyPrint', true);
+            catch
+                jsonText = jsonencode(refBehavior);
             end
 
             fid = fopen(filePath, 'w');

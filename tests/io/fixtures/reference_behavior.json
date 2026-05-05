@@ -1,0 +1,32 @@
+{
+  "scenarioName": "SimpleTest",
+  "roles": [
+    {
+      "role": "Aircrew",
+      "ordering": "strict",
+      "actions": [
+        {
+          "actionType": "SEND_STATUS",
+          "triggerEvent": "mission_start",
+          "expectedTimeSec": 10.0
+        },
+        {
+          "actionType": "REQUEST_CLEARANCE",
+          "triggerEvent": "approach_drop_zone",
+          "expectedTimeSec": 120.0
+        }
+      ]
+    },
+    {
+      "role": "Command_Staff",
+      "ordering": "unordered",
+      "actions": [
+        {
+          "actionType": "ACKNOWLEDGE",
+          "triggerEvent": "status_received",
+          "expectedTimeSec": 15.0
+        }
+      ]
+    }
+  ]
+}

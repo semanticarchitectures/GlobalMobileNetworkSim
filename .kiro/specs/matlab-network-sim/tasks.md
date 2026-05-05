@@ -208,23 +208,23 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
 - [x] 13. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Implement agent role loading and LLM client
-  - [ ] 14.1 Implement `agent.RoleLoader`
+- [x] 14. Implement agent role loading and LLM client
+  - [x] 14.1 Implement `agent.RoleLoader`
     - Write `+agent/RoleLoader.m` with static method `load(filePath)`
     - Validate file exists and is non-empty; extract role name from first H1 heading (`# <name>`)
     - Return struct `{name, sourceRef, fullMarkdown}`
     - Throw `netsim:agent:roleLoadError` with file path if file is unreadable or empty, or if no H1 heading is found
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
 
-  - [ ] 14.2 Implement `agent.LLMClient`
+  - [x] 14.2 Implement `agent.LLMClient`
     - Write `+agent/LLMClient.m` as a handle class
     - Constructor accepts `config` struct (`baseUrl`, `apiKey`, `model`, `timeoutSec`, `maxTokens`); read `apiKey` from environment variable `NETSIM_LLM_API_KEY` if not provided; never log the key
     - Implement `complete(systemPrompt, userMessage)` via `webwrite`/`webread` to the OpenAI-compatible chat completions endpoint
     - Return struct `{content, finishReason, usageTokens}`; on HTTP failure throw `netsim:agent:llmError` with HTTP status
     - _Requirements: 13.1, 13.2_
 
-- [ ] 15. Implement agent registry and behavior tracing
-  - [ ] 15.1 Implement `agent.BehaviorTracer`
+- [x] 15. Implement agent registry and behavior tracing
+  - [x] 15.1 Implement `agent.BehaviorTracer`
     - Write `+agent/BehaviorTracer.m` as a handle class
     - Implement `record(simTimeSec, triggerEventId, actionType, targetAgentId, msgId)` appending to an internal MATLAB table
     - Implement `getTrace()` returning the full table
@@ -237,7 +237,7 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 16: Behavior trace completeness`
     - Generator: random agent action sequences; assert all required fields present in trace table and CSV export contains all required columns with no missing mandatory values
 
-  - [ ] 15.3 Implement `agent.AgentRegistry`
+  - [x] 15.3 Implement `agent.AgentRegistry`
     - Write `+agent/AgentRegistry.m` as a handle class
     - Constructor validates each agent's `nodeId` exists in `NodeRegistry`; throw `netsim:agent:unknownNode` on missing node
     - Implement `deliver(agentId, c2Message, simTimeSec)`: call `LLMClient.complete` with role context + message; record resulting actions in `BehaviorTracer`; schedule any outgoing C2 messages as `C2_MESSAGE_TX` events
@@ -251,14 +251,14 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 15: Agent message delivery timing`
     - Generator: random messages with known transmission times and path latencies; assert receiving agent is notified at `txTime + latencyMs/1000`, not at `txTime`
 
-- [ ] 16. Implement reference behavior loading and fidelity evaluation
-  - [ ] 16.1 Implement reference behavior loading in `io.ScenarioLoader`
+- [x] 16. Implement reference behavior loading and fidelity evaluation
+  - [x] 16.1 Implement reference behavior loading in `io.ScenarioLoader`
     - Extend `ScenarioLoader.load` to parse the `referenceBehaviorFile` JSON (schema §4.5)
     - Validate all referenced roles exist in the scenario's agent definitions; log `netsim:agent:unassignedRole` warning (do not halt) for roles with no assigned agent
     - Validate all referenced C2 message types exist
     - _Requirements: 14.1, 14.2, 14.4_
 
-  - [ ] 16.2 Implement reference behavior save/load round-trip in `io.ScenarioLoader`
+  - [x] 16.2 Implement reference behavior save/load round-trip in `io.ScenarioLoader`
     - Add `saveReferenceBehavior(refBehavior, filePath)` and `loadReferenceBehavior(filePath)` static methods
     - _Requirements: 14.3, 14.5_
 
@@ -268,7 +268,7 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 2: Reference behavior round-trip`
     - Generator: random reference behavior specs with 1–10 roles, strict and unordered ordering, 1–20 actions each; assert `load(save(spec))` is field-for-field equivalent
 
-  - [ ] 16.4 Implement `agent.FidelityEvaluator`
+  - [x] 16.4 Implement `agent.FidelityEvaluator`
     - Write `+agent/FidelityEvaluator.m` as a handle class
     - Implement `evaluate(behaviorTrace, eventLog)` returning struct `{fidelityScore, missingActions, extraActions, deviations}`
     - Compute `fidelityScore` as fraction of required reference actions present in trace, respecting strict ordering where configured

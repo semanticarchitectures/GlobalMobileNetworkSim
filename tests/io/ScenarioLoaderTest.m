@@ -17,8 +17,16 @@ classdef ScenarioLoaderTest < matlab.unittest.TestCase
     %   7. testLoadInvalidKeplerElementsThrows — node with keplerElements
     %                                       missing eccentricity, verify throws
     %                                       netsim:node:invalidKeplerElements
+    %   8. testLoadReferenceBehaviorFixture — load reference_behavior.json,
+    %                                       verify scenarioName=="SimpleTest"
+    %                                       and numel(roles)==2
+    %   9. testReferenceBehaviorRoundTrip — load, save to temp, reload, verify
+    %                                       scenarioName matches
+    %  10. testLoadReferenceBehaviorMissingFieldThrows — JSON without 'roles'
+    %                                       field throws netsim:io:missingField
     %
-    % Requirements: 7.1, 7.2, 7.3, 7.4, 1.4, 2.7, 3.5, 10.4
+    % Requirements: 7.1, 7.2, 7.3, 7.4, 1.4, 2.7, 3.5, 10.4, 14.1, 14.2,
+    %               14.3, 14.4, 14.5
 
     properties
         % Absolute path to the fixture file, computed from this file's location.
@@ -219,6 +227,72 @@ classdef ScenarioLoaderTest < matlab.unittest.TestCase
             testCase.verifyError(@() io.ScenarioLoader.load(tmpFile), ...
                 'netsim:node:invalidKeplerElements', ...
                 'Missing eccentricity should throw netsim:node:invalidKeplerElements');
+        end
+
+        % ------------------------------------------------------------------
+        % Test 8: loadReferenceBehavior loads fixture correctly
+        % ------------------------------------------------------------------
+        function testLoadReferenceBehaviorFixture(testCase)
+            % loadReferenceBehavior() should parse reference_behavior.json and
+            % return a struct with scenarioName=="SimpleTest" and 2 roles.
+            %
+            % Requirements: 14.1, 14.3
+
+            thisDir = fileparts(mfilename('fullpath'));
+            refFixturePath = fullfile(thisDir, 'fixtures', 'reference_behavior.json');
+
+            refBehavior = io.ScenarioLoader.loadReferenceBehavior(refFixturePath);
+
+            testCase.verifyTrue(isstruct(refBehavior), ...
+                'loadReferenceBehavior() should return a struct');
+            testCase.verifyEqual(string(refBehavior.scenarioName), "SimpleTest", ...
+                'scenarioName should be "SimpleTest"');
+            testCase.verifyEqual(numel(refBehavior.roles), 2, ...
+                'Fixture should contain 2 roles');
+        end
+
+        % ------------------------------------------------------------------
+        % Test 9: reference behavior round-trip
+        % ------------------------------------------------------------------
+        function testReferenceBehaviorRoundTrip(testCase)
+            % saveReferenceBehavior() followed by loadReferenceBehavior() should
+            % preserve scenarioName.
+            %
+            % Requirements: 14.3, 14.5
+
+            thisDir = fileparts(mfilename('fullpath'));
+            refFixturePath = fullfile(thisDir, 'fixtures', 'reference_behavior.json');
+
+            original = io.ScenarioLoader.loadReferenceBehavior(refFixturePath);
+
+            tmpFile = [tempname(), '.json'];
+            testCase.TempFiles{end+1} = tmpFile;
+
+            io.ScenarioLoader.saveReferenceBehavior(original, tmpFile);
+            reloaded = io.ScenarioLoader.loadReferenceBehavior(tmpFile);
+
+            testCase.verifyEqual(string(reloaded.scenarioName), ...
+                string(original.scenarioName), ...
+                'Round-trip: scenarioName should be preserved');
+        end
+
+        % ------------------------------------------------------------------
+        % Test 10: loadReferenceBehavior with missing 'roles' field throws
+        %          netsim:io:missingField
+        % ------------------------------------------------------------------
+        function testLoadReferenceBehaviorMissingFieldThrows(testCase)
+            % loadReferenceBehavior() should throw netsim:io:missingField when
+            % the JSON is missing the required 'roles' field.
+            %
+            % Requirements: 14.1, 14.3
+
+            jsonContent = '{"scenarioName": "TestScenario"}';
+            tmpFile = testCase.writeTempJson(jsonContent);
+
+            testCase.verifyError( ...
+                @() io.ScenarioLoader.loadReferenceBehavior(tmpFile), ...
+                'netsim:io:missingField', ...
+                'Missing roles field should throw netsim:io:missingField');
         end
 
     end % methods (Test)
