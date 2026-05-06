@@ -127,12 +127,38 @@
       "coverageRadiusM": null,
       "congestionPenaltyMs": 150
     },
+    {
+      "id": "GEO_AIRCRAFT",
+      "type": "GEO_Satellite",
+      "srcNodeId": "GEO_SAT",
+      "dstNodeId": "AIRCRAFT",
+      "nominalLatencyMs": 280,
+      "bandwidthBps": 512000,
+      "outageRate": 0.0005,
+      "outageDuration": { "distribution": "exponential", "mean": 45 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 150
+    },
 
     {
       "id": "AIRCRAFT_LEO1",
       "type": "LEO_Satellite",
       "srcNodeId": "AIRCRAFT",
       "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 30,
+      "bandwidthBps": 2000000,
+      "outageRate": 0.003,
+      "outageDuration": { "distribution": "exponential", "mean": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "LEO1_AIRCRAFT",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "AIRCRAFT",
       "nominalLatencyMs": 30,
       "bandwidthBps": 2000000,
       "outageRate": 0.003,
@@ -155,12 +181,38 @@
       "coverageRadiusM": null,
       "congestionPenaltyMs": 50
     },
+    {
+      "id": "LEO2_AIRCRAFT",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_2",
+      "dstNodeId": "AIRCRAFT",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 2000000,
+      "outageRate": 0.003,
+      "outageDuration": { "distribution": "exponential", "mean": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
 
     {
       "id": "OPS_GEO",
       "type": "GEO_Satellite",
       "srcNodeId": "OPS_CENTER",
       "dstNodeId": "GEO_SAT",
+      "nominalLatencyMs": 275,
+      "bandwidthBps": 100000000,
+      "outageRate": 0.0001,
+      "outageDuration": { "distribution": "exponential", "mean": 30 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.3, "max": 0.6 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "GEO_OPS",
+      "type": "GEO_Satellite",
+      "srcNodeId": "GEO_SAT",
+      "dstNodeId": "OPS_CENTER",
       "nominalLatencyMs": 275,
       "bandwidthBps": 100000000,
       "outageRate": 0.0001,
@@ -183,12 +235,38 @@
       "coverageRadiusM": null,
       "congestionPenaltyMs": 30
     },
+    {
+      "id": "LEO1_OPS",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "OPS_CENTER",
+      "nominalLatencyMs": 28,
+      "bandwidthBps": 50000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 90 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.2, "max": 0.5 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
 
     {
       "id": "OPS_FIBER_ATM",
       "type": "Fiber",
       "srcNodeId": "OPS_CENTER",
       "dstNodeId": "ATM_CENTER",
+      "nominalLatencyMs": 0,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0.00005,
+      "outageDuration": { "distribution": "fixed", "value": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.4, "max": 0.7 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 10
+    },
+    {
+      "id": "ATM_FIBER_OPS",
+      "type": "Fiber",
+      "srcNodeId": "ATM_CENTER",
+      "dstNodeId": "OPS_CENTER",
       "nominalLatencyMs": 0,
       "bandwidthBps": 1000000000,
       "outageRate": 0.00005,
@@ -211,12 +289,38 @@
       "coverageRadiusM": null,
       "congestionPenaltyMs": 200
     },
+    {
+      "id": "LEO2_GROUND",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_2",
+      "dstNodeId": "GROUND_TEAM",
+      "nominalLatencyMs": 40,
+      "bandwidthBps": 256000,
+      "outageRate": 0.008,
+      "outageDuration": { "distribution": "lognormal", "mu": 4.5, "sigma": 0.8 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.15 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 200
+    },
 
     {
       "id": "GROUND_OPS_FIBER",
       "type": "Fiber",
       "srcNodeId": "OPS_CENTER",
       "dstNodeId": "GROUND_TEAM",
+      "nominalLatencyMs": 0,
+      "bandwidthBps": 10000000,
+      "outageRate": 0.001,
+      "outageDuration": { "distribution": "exponential", "mean": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 20
+    },
+    {
+      "id": "GROUND_FIBER_OPS",
+      "type": "Fiber",
+      "srcNodeId": "GROUND_TEAM",
+      "dstNodeId": "OPS_CENTER",
       "nominalLatencyMs": 0,
       "bandwidthBps": 10000000,
       "outageRate": 0.001,
@@ -239,12 +343,38 @@
       "coverageRadiusM": 500000,
       "congestionPenaltyMs": 0
     },
+    {
+      "id": "GROUND_LOS_AIRCRAFT",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GROUND_TEAM",
+      "dstNodeId": "AIRCRAFT",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 50000,
+      "outageRate": 0,
+      "outageDuration": { "distribution": "fixed", "value": 10 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.05 },
+      "coverageRadiusM": 500000,
+      "congestionPenaltyMs": 0
+    },
 
     {
       "id": "ATM_LEO1",
       "type": "LEO_Satellite",
       "srcNodeId": "ATM_CENTER",
       "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 32,
+      "bandwidthBps": 10000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 20
+    },
+    {
+      "id": "LEO1_ATM",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "ATM_CENTER",
       "nominalLatencyMs": 32,
       "bandwidthBps": 10000000,
       "outageRate": 0.002,
