@@ -1,0 +1,176 @@
+{
+  "scenarioName": "MixedLinkTest",
+  "simulationDurationSec": 600,
+  "nodes": [
+    {
+      "id": "NYC",
+      "type": "Stationary",
+      "lat": 40.7128,
+      "lon": -74.0060,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+    {
+      "id": "LON",
+      "type": "Stationary",
+      "lat": 51.5074,
+      "lon": -0.1278,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+    {
+      "id": "GEO_SAT",
+      "type": "Mobile",
+      "lat": 0.0,
+      "lon": 0.0,
+      "altM": 35786000.0,
+      "trajectory": null,
+      "keplerElements": {
+        "semiMajorAxisM": 42164000,
+        "eccentricity": 0,
+        "inclinationDeg": 0,
+        "raanDeg": 0,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 0,
+        "epochSec": 0
+      }
+    },
+    {
+      "id": "LEO_SAT",
+      "type": "Mobile",
+      "lat": 0.0,
+      "lon": 0.0,
+      "altM": 400000.0,
+      "trajectory": null,
+      "keplerElements": {
+        "semiMajorAxisM": 6778000,
+        "eccentricity": 0,
+        "inclinationDeg": 51.6,
+        "raanDeg": 45,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 0,
+        "epochSec": 0
+      }
+    },
+    {
+      "id": "AIRCRAFT",
+      "type": "Mobile",
+      "lat": 40.0,
+      "lon": -70.0,
+      "altM": 10000.0,
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          { "timeSec": 0, "lat": 40.0, "lon": -70.0, "altM": 10000 },
+          { "timeSec": 3600, "lat": 45.0, "lon": -60.0, "altM": 10000 }
+        ]
+      },
+      "keplerElements": null
+    }
+  ],
+  "links": [
+    {
+      "id": "GEO_LINK",
+      "type": "GEO_Satellite",
+      "srcNodeId": "NYC",
+      "dstNodeId": "GEO_SAT",
+      "nominalLatencyMs": 280,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0.001,
+      "outageDuration": { "distribution": "exponential", "mean": 30 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "LEO_LINK",
+      "type": "LEO_Satellite",
+      "srcNodeId": "NYC",
+      "dstNodeId": "LEO_SAT",
+      "nominalLatencyMs": 25,
+      "bandwidthBps": 500000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 20 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "FIBER_LINK",
+      "type": "Fiber",
+      "srcNodeId": "NYC",
+      "dstNodeId": "LON",
+      "nominalLatencyMs": 0,
+      "bandwidthBps": 10000000000,
+      "outageRate": 0.0001,
+      "outageDuration": { "distribution": "fixed", "value": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.2, "max": 0.4 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "LOS_LINK",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "AIRCRAFT",
+      "dstNodeId": "NYC",
+      "nominalLatencyMs": 5,
+      "bandwidthBps": 100000000,
+      "outageRate": 0,
+      "outageDuration": { "distribution": "fixed", "value": 10 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.1 },
+      "coverageRadiusM": 2000000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "LEO_LON",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LON",
+      "dstNodeId": "LEO_SAT",
+      "nominalLatencyMs": 30,
+      "bandwidthBps": 500000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 20 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GEO_LON",
+      "type": "GEO_Satellite",
+      "srcNodeId": "LON",
+      "dstNodeId": "GEO_SAT",
+      "nominalLatencyMs": 285,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0.001,
+      "outageDuration": { "distribution": "exponential", "mean": 30 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 0
+    }
+  ],
+  "c2Messages": [
+    {
+      "id": "msg1",
+      "srcNodeId": "NYC",
+      "dstNodeId": "LON",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 10
+    },
+    {
+      "id": "msg2",
+      "srcNodeId": "NYC",
+      "dstNodeId": "LON",
+      "sizeBytes": 1024,
+      "scheduledTimeSec": 100
+    },
+    {
+      "id": "msg3",
+      "srcNodeId": "LON",
+      "dstNodeId": "NYC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 200
+    }
+  ]
+}

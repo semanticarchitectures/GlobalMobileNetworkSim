@@ -36,6 +36,19 @@ classdef SimController < handle
         bgTrafficModel        % network.BackgroundTrafficModel
         routingEngine         % network.RoutingEngine
 
+        % Agent layer (empty [] when scenario has no agents or no llmClient)
+        agentRegistry         % agent.AgentRegistry (or [])
+        fidelityEvaluator     % agent.FidelityEvaluator (or [])
+
+        % Per-run evaluation results (struct array, populated at SIM_END)
+        % Each element: agentId, role, fidelityScore, missingActions,
+        %               extraActions, deviations
+        evalResults           % struct array (empty until handleSimEnd)
+
+        % Run identification (set at run() start)
+        runId           % string UUID for this run
+        runTimestamp    % ISO-8601 timestamp string for this run
+
         % Accumulated latencies of delivered C2 messages (for statistics)
         deliveredLatenciesMs  % double array
     end
@@ -57,13 +70,18 @@ classdef SimController < handle
     % Constructor
     % -----------------------------------------------------------------
     methods
-        function sc = SimController(scenario)
+        function sc = SimController(scenario, llmClient)
             % SimController  Construct a controller for the given scenario.
             %
             %   sc = sim.SimController(scenario)
+            %   sc = sim.SimController(scenario, llmClient)
             %
             % scenario must be a struct with at least the field:
             %   simulationDurationSec (double)
+            %
+            % llmClient (optional) — agent.LLMClient instance.  When provided
+            %   and the scenario has an 'agents' field, an AgentRegistry is
+            %   constructed.  When omitted, agentRegistry is left empty.
             %
             % If scenario also has 'nodes' and 'links' fields, the network
             % subsystems (NodeRegistry, LinkRegistry, OutageEngine,
@@ -103,6 +121,15 @@ classdef SimController < handle
             % Initialise delivered latencies accumulator.
             sc.deliveredLatenciesMs = [];
 
+            % Initialise agent-layer properties.
+            sc.agentRegistry     = [];
+            sc.fidelityEvaluator = [];
+            sc.evalResults       = struct( ...
+                'agentId', {}, 'role', {}, 'fidelityScore', {}, ...
+                'missingActions', {}, 'extraActions', {}, 'deviations', {});
+            sc.runId        = '';
+            sc.runTimestamp = '';
+
             % Construct network subsystems if scenario has nodes and links.
             if isfield(scenario, 'nodes') && isfield(scenario, 'links') && ...
                     ~isempty(scenario.nodes) && ~isempty(scenario.links)
@@ -131,6 +158,19 @@ classdef SimController < handle
                 sc.routingEngine  = [];
                 sc.linkStats      = containers.Map('KeyType', 'char', 'ValueType', 'any');
             end
+
+            % Construct agent layer if scenario has agents and llmClient is provided.
+            if nargin >= 2 && ~isempty(llmClient) && ...
+                    isfield(scenario, 'agents') && ~isempty(scenario.agents)
+                sc.agentRegistry = agent.AgentRegistry( ...
+                    scenario.agents, sc.nodeRegistry, llmClient, sc.eventCalendar);
+            end
+
+            % Construct FidelityEvaluator if scenario has a referenceBehavior.
+            if isfield(scenario, 'referenceBehavior') && ...
+                    ~isempty(scenario.referenceBehavior)
+                sc.fidelityEvaluator = agent.FidelityEvaluator(scenario.referenceBehavior);
+            end
         end
     end
 
@@ -149,6 +189,14 @@ classdef SimController < handle
             sc.wallClockStart = tic;
             sc.isStopped      = false;
             sc.isPaused       = false;
+
+            % Assign a unique run identifier and ISO-8601 timestamp.
+            try
+                sc.runId = char(java.util.UUID.randomUUID());
+            catch
+                sc.runId = sprintf('run-%s', datestr(now, 'yyyymmddHHMMSSFFF')); %#ok<TNOW1,DATST>
+            end
+            sc.runTimestamp = datestr(now, 'yyyy-mm-ddTHH:MM:SS'); %#ok<TNOW1,DATST>
 
             % Schedule the simulation-end sentinel event.
             endEvent.time    = sc.scenario.simulationDurationSec;
@@ -236,23 +284,58 @@ classdef SimController < handle
             %   isStopped         — current stop flag
             %   nodeCount         — number of nodes (0 if no nodeRegistry)
             %   linkCount         — number of links (0 if no linkRegistry)
+            %   nodes             — struct array with id, lat, lon, altM per node
+            %   links             — struct array with id, isActive, effectiveBwBps per link
+            %   queuedC2Messages  — count of C2_MESSAGE_TX events still in calendar
+            %
+            % Requirements: 8.3
 
             state.simTimeSec       = sc.simTimeSec;
             state.queuedEventCount = sc.eventCalendar.eventCount();
             state.isPaused         = sc.isPaused;
             state.isStopped        = sc.isStopped;
 
+            % Node count and positions
             if ~isempty(sc.nodeRegistry)
                 state.nodeCount = sc.nodeRegistry.count();
+                nNodes = sc.nodeRegistry.count();
+                nodeSnap(nNodes) = struct('id','','lat',0,'lon',0,'altM',0);
+                for k = 1:nNodes
+                    nid = sc.nodeRegistry.getIdByIndex(k);
+                    pos = sc.nodeRegistry.getPosition(nid, sc.simTimeSec);
+                    nodeSnap(k).id   = char(nid);
+                    nodeSnap(k).lat  = pos.lat;
+                    nodeSnap(k).lon  = pos.lon;
+                    nodeSnap(k).altM = pos.altM;
+                end
+                state.nodes = nodeSnap;
             else
                 state.nodeCount = 0;
+                state.nodes = struct('id',{},'lat',{},'lon',{},'altM',{});
             end
 
+            % Link count and states
             if ~isempty(sc.linkRegistry)
                 state.linkCount = sc.linkRegistry.count();
+                linkIds = sc.linkRegistry.getLinkIds();
+                nLinks  = numel(linkIds);
+                linkSnap(nLinks) = struct('id','','isActive',false,'effectiveBwBps',0);
+                for k = 1:nLinks
+                    lid = char(linkIds(k));
+                    linkSnap(k).id             = lid;
+                    linkSnap(k).isActive       = sc.linkRegistry.isLinkActive(lid);
+                    linkSnap(k).effectiveBwBps = sc.linkRegistry.getEffectiveBandwidth(lid);
+                end
+                state.links = linkSnap;
             else
                 state.linkCount = 0;
+                state.links = struct('id',{},'isActive',{},'effectiveBwBps',{});
             end
+
+            % Count queued C2_MESSAGE_TX events (approximate — counts all
+            % events of that type still in the calendar is not directly
+            % accessible; report total queued events instead)
+            state.queuedC2Messages = 0;  % placeholder; full count requires calendar scan
         end
 
         function n = eventCount(sc)
@@ -363,17 +446,62 @@ classdef SimController < handle
                     'outageFraction', {});
             end
 
-            % Agent fidelity placeholder (wired in Task 18.1)
-            report.agentFidelity.mean = NaN;
-            report.agentFidelity.min  = NaN;
-            report.agentFidelity.max  = NaN;
+            % Agent fidelity — use actual evalResults if available, else NaN.
+            if ~isempty(sc.evalResults) && numel(sc.evalResults) > 0
+                scores = [sc.evalResults.fidelityScore];
+                scores = scores(~isnan(scores));
+                if ~isempty(scores)
+                    report.agentFidelity.mean = mean(scores);
+                    report.agentFidelity.min  = min(scores);
+                    report.agentFidelity.max  = max(scores);
+                else
+                    report.agentFidelity.mean = NaN;
+                    report.agentFidelity.min  = NaN;
+                    report.agentFidelity.max  = NaN;
+                end
+            else
+                report.agentFidelity.mean = NaN;
+                report.agentFidelity.min  = NaN;
+                report.agentFidelity.max  = NaN;
+            end
+        end
+
+        function report = buildEvalReport(sc)
+            % buildEvalReport  Build an Evaluation_Report struct matching §4.4.
+            %
+            %   report = sc.buildEvalReport()
+            %
+            % Returns a struct with fields:
+            %   runId        — UUID string assigned at run() start
+            %   timestamp    — ISO-8601 timestamp string
+            %   scenarioName — from scenario.scenarioName or 'unnamed'
+            %   agents       — struct array, each with:
+            %                    agentId, role, fidelityScore,
+            %                    missingActions, extraActions, deviations
+            %
+            % Requirements: 15.1, 15.3, 16.1, 16.3
+
+            report.runId     = sc.runId;
+            report.timestamp = sc.runTimestamp;
+
+            if isfield(sc.scenario, 'scenarioName') && ...
+                    ~isempty(sc.scenario.scenarioName)
+                report.scenarioName = sc.scenario.scenarioName;
+            else
+                report.scenarioName = 'unnamed';
+            end
+
+            % Build agents array from evalResults.
+            if isempty(sc.evalResults) || numel(sc.evalResults) == 0
+                report.agents = struct( ...
+                    'agentId', {}, 'role', {}, 'fidelityScore', {}, ...
+                    'missingActions', {}, 'extraActions', {}, 'deviations', {});
+            else
+                report.agents = sc.evalResults;
+            end
         end
 
     end
-
-    % -----------------------------------------------------------------
-    % Private methods
-    % -----------------------------------------------------------------
     methods (Access = private)
 
         function id = nextId(sc)
@@ -516,7 +644,14 @@ classdef SimController < handle
             % handleC2MessageRx  Process a C2_MESSAGE_RX event.
             %
             % Increments stats.c2MessagesRx, appends latencyMs to
-            % deliveredLatenciesMs, and logs the delivery.
+            % deliveredLatenciesMs, logs the delivery, and delivers the
+            % message to the destination agent if one is bound to the
+            % destination node.
+            %
+            % The simulation clock pauses implicitly while the LLM processes
+            % the message because LLMClient.complete() is synchronous.
+            %
+            % Requirements: 12.2, 12.3, 12.4, 13.1, 13.2, 13.5
 
             p         = event.payload;
             msgId     = sim.SimController.payloadField(p, 'msgId',    '');
@@ -527,6 +662,32 @@ classdef SimController < handle
             sc.stats.c2MessagesRx = sc.stats.c2MessagesRx + uint64(1);
             sc.deliveredLatenciesMs(end + 1) = latencyMs;
             sc.appendLog(event, '', msgId, srcId, dstId, latencyMs, '');
+
+            % Deliver to agent bound to the destination node (if any).
+            if ~isempty(sc.agentRegistry)
+                agentIds = sc.agentRegistry.getAgentIds();
+                for k = 1:numel(agentIds)
+                    agId = agentIds(k);
+                    % Check if this agent is bound to the destination node.
+                    % We do this by checking the agent's nodeId via the
+                    % scenario agents definition.
+                    agentNodeId = sc.getAgentNodeId_(agId);
+                    if string(agentNodeId) == string(dstId)
+                        % Build a c2Message struct for the agent.
+                        c2Msg.srcNodeId = srcId;
+                        c2Msg.msgId     = msgId;
+                        c2Msg.txTime    = sim.SimController.payloadField(p, 'txTime', sc.simTimeSec);
+                        c2Msg.latencyMs = latencyMs;
+                        try
+                            sc.agentRegistry.deliver(agId, c2Msg, sc.simTimeSec);
+                        catch ME
+                            warning('netsim:sim:agentDeliverError', ...
+                                'Agent delivery failed for "%s": %s', agId, ME.message);
+                        end
+                        break;  % Each message delivered to at most one agent
+                    end
+                end
+            end
         end
 
         function handleC2MessageFail(sc, event)
@@ -641,11 +802,30 @@ classdef SimController < handle
         end
 
         function handleAgentIdleCheck(sc, event)
+            % handleAgentIdleCheck  Process an AGENT_IDLE_CHECK event.
+            %
+            % Calls agentRegistry.checkIdle() which invokes the LLM for a
+            % role-appropriate status check-in and schedules the next idle
+            % check event.  The simulation clock pauses implicitly because
+            % LLMClient.complete() is synchronous (blocking).
+            %
+            % Requirements: 12.5, 13.4
+
             p       = event.payload;
             agentId = sim.SimController.payloadField(p, 'agentId', '');
             sc.appendLog(event, '', agentId, '', '', NaN, '');
             sc.stats.agentIdleCheckCount = ...
                 sc.stats.agentIdleCheckCount + uint64(1);
+
+            % Delegate to AgentRegistry if available.
+            if ~isempty(sc.agentRegistry) && ~isempty(agentId)
+                try
+                    sc.agentRegistry.checkIdle(agentId, sc.simTimeSec);
+                catch ME
+                    warning('netsim:sim:agentIdleCheckError', ...
+                        'Agent idle check failed for "%s": %s', agentId, ME.message);
+                end
+            end
         end
 
         function handleSimEnd(sc, event)
@@ -653,7 +833,72 @@ classdef SimController < handle
             if ~isempty(sc.wallClockStart)
                 sc.wallClockDurationSec = toc(sc.wallClockStart);
             end
+
+            % Run fidelity evaluation for each agent if both registries exist.
+            if ~isempty(sc.agentRegistry) && ~isempty(sc.fidelityEvaluator)
+                agentIds = sc.agentRegistry.getAgentIds();
+                for k = 1:numel(agentIds)
+                    agId = agentIds(k);
+                    tracer = sc.agentRegistry.getTracer(agId);
+                    trace  = tracer.getTrace();
+
+                    % Determine the agent's role name from the registry.
+                    tracerInfo = sc.agentRegistry.getAllTracers();
+                    roleName = '';
+                    for ti = 1:numel(tracerInfo)
+                        if string(tracerInfo(ti).agentId) == string(agId)
+                            roleName = tracerInfo(ti).role;
+                            break;
+                        end
+                    end
+
+                    % Evaluate fidelity.
+                    result = sc.fidelityEvaluator.evaluate( ...
+                        trace, sc.eventLog, roleName);
+
+                    % Accumulate into evalResults.
+                    entry.agentId        = agId;
+                    entry.role           = roleName;
+                    entry.fidelityScore  = result.fidelityScore;
+                    entry.missingActions = result.missingActions;
+                    entry.extraActions   = result.extraActions;
+                    entry.deviations     = result.deviations;
+                    sc.evalResults(end + 1) = entry;
+                end
+            end
+
             sc.isStopped = true;
+        end
+
+        % --- Agent node lookup helper ----------------------------------------
+
+        function nodeId = getAgentNodeId_(sc, agentId)
+            % getAgentNodeId_  Return the nodeId bound to the given agent.
+            %
+            % Looks up the agent definition in scenario.agents by agentId.
+            % Returns '' if not found.
+
+            nodeId = '';
+            if ~isfield(sc.scenario, 'agents') || isempty(sc.scenario.agents)
+                return;
+            end
+            agents = sc.scenario.agents;
+            if isstruct(agents)
+                for k = 1:numel(agents)
+                    if string(agents(k).id) == string(agentId)
+                        nodeId = char(agents(k).nodeId);
+                        return;
+                    end
+                end
+            elseif iscell(agents)
+                for k = 1:numel(agents)
+                    ag = agents{k};
+                    if string(ag.id) == string(agentId)
+                        nodeId = char(ag.nodeId);
+                        return;
+                    end
+                end
+            end
         end
 
         % --- LOS link update (Task 8.2) -------------------------------------

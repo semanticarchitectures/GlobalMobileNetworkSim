@@ -339,37 +339,6 @@ classdef LinkRegistry < handle
             params = obj.links.backgroundTraffic{idx};
         end
 
-        function frac = getBgLoadFraction(obj, linkId)
-            % getBgLoadFraction  Return the current background load fraction.
-            %
-            %   frac = lr.getBgLoadFraction(linkId)
-            %
-            % Requirements: 3.1, 3.4
-
-            idx  = obj.indexOf(linkId);
-            frac = obj.links.bgLoadFraction(idx);
-        end
-
-        function linkId = getLinksBetweenNodes(obj, srcNodeId, dstNodeId)
-            % getLinksBetweenNodes  Return the ID of the first active link
-            %                       from srcNodeId to dstNodeId.
-            %
-            %   linkId = lr.getLinksBetweenNodes(srcNodeId, dstNodeId)
-            %
-            %   Returns the link ID string if found, or '' if no such link exists.
-            %   Used by SimController to map path hops to link IDs for stats.
-
-            srcStr = string(srcNodeId);
-            dstStr = string(dstNodeId);
-            mask   = (obj.links.srcNodeId == srcStr) & (obj.links.dstNodeId == dstStr);
-            idxs   = find(mask, 1);
-            if isempty(idxs)
-                linkId = '';
-            else
-                linkId = char(obj.links.id(idxs));
-            end
-        end
-
         function ids = getActiveLinkIds(obj)
             % getActiveLinkIds  Return string array of IDs of currently active links.
             %

@@ -469,6 +469,88 @@ classdef SimControllerTest < matlab.unittest.TestCase
                 'wallClockDurationSec should be positive after run().');
         end
 
+        % --- Test 11 (Task 18.1): runId and runTimestamp are set after run() ---
+        function testRunIdAndTimestampSetAfterRun(testCase)
+            sc = sim.SimController(SimControllerTest.makeScenario(0));
+            sc.run();
+
+            testCase.verifyNotEmpty(sc.runId, ...
+                'runId should be non-empty after run().');
+            testCase.verifyNotEmpty(sc.runTimestamp, ...
+                'runTimestamp should be non-empty after run().');
+            testCase.verifyClass(sc.runId, 'char', ...
+                'runId should be a char string.');
+            testCase.verifyClass(sc.runTimestamp, 'char', ...
+                'runTimestamp should be a char string.');
+        end
+
+        % --- Test 12 (Task 18.1): runId is empty before run() ---
+        function testRunIdEmptyBeforeRun(testCase)
+            sc = sim.SimController(SimControllerTest.makeScenario(0));
+            testCase.verifyEmpty(sc.runId, ...
+                'runId should be empty before run().');
+        end
+
+        % --- Test 13 (Task 18.1): agentRegistry and fidelityEvaluator are [] without agents ---
+        function testAgentRegistryEmptyWithoutAgents(testCase)
+            sc = sim.SimController(SimControllerTest.makeScenario(0));
+            testCase.verifyEmpty(sc.agentRegistry, ...
+                'agentRegistry should be [] when scenario has no agents.');
+            testCase.verifyEmpty(sc.fidelityEvaluator, ...
+                'fidelityEvaluator should be [] when scenario has no referenceBehavior.');
+        end
+
+        % --- Test 14 (Task 18.1): buildEvalReport() returns struct with required fields ---
+        function testBuildEvalReportHasRequiredFields(testCase)
+            sc = sim.SimController(SimControllerTest.makeScenario(0));
+            sc.scenario.scenarioName = 'eval-test';
+            sc.run();
+
+            report = sc.buildEvalReport();
+
+            testCase.verifyTrue(isstruct(report), ...
+                'buildEvalReport() should return a struct.');
+            testCase.verifyTrue(isfield(report, 'runId'), ...
+                'eval report should have runId field.');
+            testCase.verifyTrue(isfield(report, 'timestamp'), ...
+                'eval report should have timestamp field.');
+            testCase.verifyTrue(isfield(report, 'scenarioName'), ...
+                'eval report should have scenarioName field.');
+            testCase.verifyTrue(isfield(report, 'agents'), ...
+                'eval report should have agents field.');
+            testCase.verifyEqual(string(report.scenarioName), "eval-test", ...
+                'scenarioName should match scenario.scenarioName.');
+            testCase.verifyEqual(report.runId, sc.runId, ...
+                'runId in eval report should match sc.runId.');
+        end
+
+        % --- Test 15 (Task 18.1): evalResults is empty struct array without agents ---
+        function testEvalResultsEmptyWithoutAgents(testCase)
+            sc = sim.SimController(SimControllerTest.makeScenario(10));
+            sc.run();
+
+            testCase.verifyEmpty(sc.evalResults, ...
+                'evalResults should be empty when no agentRegistry is present.');
+        end
+
+        % --- Test 16 (Task 18.1): fidelityEvaluator constructed from referenceBehavior ---
+        function testFidelityEvaluatorConstructedFromReferenceBehavior(testCase)
+            scenario = SimControllerTest.makeScenario(0);
+            % Build a minimal referenceBehavior struct.
+            refBehavior.scenarioName = 'test';
+            refBehavior.roles = struct( ...
+                'role', {'Aircrew'}, ...
+                'ordering', {'unordered'}, ...
+                'actions', {struct('actionType', {}, 'triggerEvent', {}, 'expectedTimeSec', {})});
+            scenario.referenceBehavior = refBehavior;
+
+            sc = sim.SimController(scenario);
+            testCase.verifyNotEmpty(sc.fidelityEvaluator, ...
+                'fidelityEvaluator should be constructed when scenario has referenceBehavior.');
+            testCase.verifyClass(sc.fidelityEvaluator, 'agent.FidelityEvaluator', ...
+                'fidelityEvaluator should be an agent.FidelityEvaluator instance.');
+        end
+
     end
 
 end

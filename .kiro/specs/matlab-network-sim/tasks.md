@@ -288,17 +288,17 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 5: Network-constrained annotation`
     - Generator: random scenarios with injected network failures on specific message paths; assert fidelity score equals score computed with those actions excluded from reference, and missing actions annotated `"network-constrained"`
 
-- [ ] 17. Checkpoint — Ensure all tests pass
+- [x] 17. Checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 18. Implement evaluation reporting and batch support
-  - [ ] 18.1 Wire `FidelityEvaluator` into `SimController` and `ReportWriter`
+- [x] 18. Implement evaluation reporting and batch support
+  - [x] 18.1 Wire `FidelityEvaluator` into `SimController` and `ReportWriter`
     - After simulation completes, call `FidelityEvaluator.evaluate` for each agent and collect results
     - Pass evaluation results to `ReportWriter.writeEvaluationReport` and include `agentFidelity` summary in `writeStatisticsReport`
     - Assign a UUID run identifier and ISO-8601 timestamp to each run
     - _Requirements: 15.1, 15.3, 16.1, 16.3_
 
-  - [ ] 18.2 Implement batch run support and combined evaluation report
+  - [x] 18.2 Implement batch run support and combined evaluation report
     - Write a `runBatch(scenarioFiles, outputDir)` function (or method on `SimController`) that executes multiple scenario files sequentially
     - Aggregate per-run `EvaluationReport` structs into a combined report with unique `runId` and `timestamp` per run
     - Write the combined report via `ReportWriter`
@@ -316,19 +316,19 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Tag: `% Feature: matlab-network-sim, Property 18: Batch evaluation report uniqueness`
     - Generator: random sets of 2–10 evaluation reports; assert all `runId` values are distinct, all `timestamp` values are distinct ISO-8601 strings, and union of per-run fidelity scores matches individual reports
 
-- [ ] 19. Final integration and wiring
-  - [ ] 19.1 Wire agent layer into `SimController`
+- [x] 19. Final integration and wiring
+  - [x] 19.1 Wire agent layer into `SimController`
     - Construct `AgentRegistry` from scenario agent definitions in `SimController`
     - Implement `C2_MESSAGE_RX` handler path for agent-bound destination nodes: call `AgentRegistry.deliver` at the computed delivery simulation time
     - Implement `AGENT_IDLE_CHECK` handler: call `AgentRegistry.checkIdle`
     - Pause simulation clock while awaiting LLM response (synchronous `LLMClient.complete` call already blocks; ensure `SimClock` does not advance during this period)
     - _Requirements: 12.2, 12.3, 12.4, 13.1, 13.2, 13.5_
 
-  - [ ] 19.2 Implement `inspect()` state snapshot in `SimController`
+  - [x] 19.2 Implement `inspect()` state snapshot in `SimController`
     - Return a struct containing current state of all nodes (positions), all links (active/outage/effective BW), and count of queued C2 messages
     - _Requirements: 8.3_
 
-  - [ ] 19.3 Write integration test: 5-node mixed-link scenario
+  - [x] 19.3 Write integration test: 5-node mixed-link scenario
     - Create a 5-node, 6-link scenario (one GEO satellite link, one fiber link, one LOS link, one LEO link, two additional links) as a JSON fixture
     - Run the full simulation and assert: event log CSV is written and parseable; statistics report JSON contains all required fields; LOS link transitions to outage when mobile node moves outside coverage radius; delivered message latencies are consistent with link types
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6, 4.1, 5.4, 8.5, 9.1, 9.2, 9.3_
@@ -339,7 +339,7 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
     - Assert: behavior traces are written with all required columns; fidelity evaluation produces a score in [0,1]; evaluation report JSON contains all required fields; agent messages are delivered at `txTime + latency`, not at `txTime`
     - _Requirements: 12.4, 13.1, 13.3, 15.1, 16.1, 16.2_
 
-- [ ] 20. Final checkpoint — Ensure all tests pass
+- [x] 20. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
