@@ -1,0 +1,309 @@
+{
+  "scenarioName": "AirdropMission",
+  "simulationDurationSec": 7200,
+
+  "nodes": [
+    {
+      "id": "AIRCRAFT",
+      "type": "Mobile",
+      "lat": 55.0,
+      "lon": -30.0,
+      "altM": 7500.0,
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          { "timeSec":    0, "lat": 55.0, "lon": -30.0, "altM": 7500 },
+          { "timeSec":  900, "lat": 54.0, "lon": -20.0, "altM": 7500 },
+          { "timeSec": 1800, "lat": 53.0, "lon": -10.0, "altM": 7500 },
+          { "timeSec": 2700, "lat": 52.5, "lon":   0.0, "altM": 7500 },
+          { "timeSec": 3600, "lat": 52.0, "lon":  10.0, "altM": 7500 },
+          { "timeSec": 4500, "lat": 51.5, "lon":  20.0, "altM": 7500 },
+          { "timeSec": 5400, "lat": 51.0, "lon":  25.0, "altM": 3000 },
+          { "timeSec": 5700, "lat": 50.8, "lon":  27.0, "altM": 1500 },
+          { "timeSec": 6000, "lat": 50.6, "lon":  28.0, "altM": 1500 },
+          { "timeSec": 6300, "lat": 50.8, "lon":  29.0, "altM": 3000 },
+          { "timeSec": 7200, "lat": 51.5, "lon":  35.0, "altM": 7500 }
+        ]
+      },
+      "keplerElements": null
+    },
+
+    {
+      "id": "OPS_CENTER",
+      "type": "Stationary",
+      "lat": 40.7128,
+      "lon": -74.0060,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+
+    {
+      "id": "GROUND_TEAM",
+      "type": "Stationary",
+      "lat": 50.6,
+      "lon": 28.0,
+      "altM": 200.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+
+    {
+      "id": "ATM_CENTER",
+      "type": "Stationary",
+      "lat": 50.0,
+      "lon": 14.0,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+
+    {
+      "id": "GEO_SAT",
+      "type": "Mobile",
+      "lat": 0.0,
+      "lon": 0.0,
+      "altM": 35786000.0,
+      "trajectory": null,
+      "keplerElements": {
+        "semiMajorAxisM": 42164000,
+        "eccentricity": 0,
+        "inclinationDeg": 0,
+        "raanDeg": 0,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 0,
+        "epochSec": 0
+      }
+    },
+
+    {
+      "id": "LEO_SAT_1",
+      "type": "Mobile",
+      "lat": 0.0,
+      "lon": 0.0,
+      "altM": 550000.0,
+      "trajectory": null,
+      "keplerElements": {
+        "semiMajorAxisM": 6928000,
+        "eccentricity": 0.0001,
+        "inclinationDeg": 53.0,
+        "raanDeg": 20.0,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 45.0,
+        "epochSec": 0
+      }
+    },
+
+    {
+      "id": "LEO_SAT_2",
+      "type": "Mobile",
+      "lat": 0.0,
+      "lon": 0.0,
+      "altM": 550000.0,
+      "trajectory": null,
+      "keplerElements": {
+        "semiMajorAxisM": 6928000,
+        "eccentricity": 0.0001,
+        "inclinationDeg": 53.0,
+        "raanDeg": 110.0,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 180.0,
+        "epochSec": 0
+      }
+    }
+  ],
+
+  "links": [
+    {
+      "id": "AIRCRAFT_GEO",
+      "type": "GEO_Satellite",
+      "srcNodeId": "AIRCRAFT",
+      "dstNodeId": "GEO_SAT",
+      "nominalLatencyMs": 280,
+      "bandwidthBps": 512000,
+      "outageRate": 0.0005,
+      "outageDuration": { "distribution": "exponential", "mean": 45 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 150
+    },
+
+    {
+      "id": "AIRCRAFT_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "AIRCRAFT",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 30,
+      "bandwidthBps": 2000000,
+      "outageRate": 0.003,
+      "outageDuration": { "distribution": "exponential", "mean": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+
+    {
+      "id": "AIRCRAFT_LEO2",
+      "type": "LEO_Satellite",
+      "srcNodeId": "AIRCRAFT",
+      "dstNodeId": "LEO_SAT_2",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 2000000,
+      "outageRate": 0.003,
+      "outageDuration": { "distribution": "exponential", "mean": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.05, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+
+    {
+      "id": "OPS_GEO",
+      "type": "GEO_Satellite",
+      "srcNodeId": "OPS_CENTER",
+      "dstNodeId": "GEO_SAT",
+      "nominalLatencyMs": 275,
+      "bandwidthBps": 100000000,
+      "outageRate": 0.0001,
+      "outageDuration": { "distribution": "exponential", "mean": 30 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.3, "max": 0.6 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+
+    {
+      "id": "OPS_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "OPS_CENTER",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 28,
+      "bandwidthBps": 50000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 90 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.2, "max": 0.5 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
+
+    {
+      "id": "OPS_FIBER_ATM",
+      "type": "Fiber",
+      "srcNodeId": "OPS_CENTER",
+      "dstNodeId": "ATM_CENTER",
+      "nominalLatencyMs": 0,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0.00005,
+      "outageDuration": { "distribution": "fixed", "value": 120 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.4, "max": 0.7 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 10
+    },
+
+    {
+      "id": "GROUND_SAT_TERMINAL",
+      "type": "LEO_Satellite",
+      "srcNodeId": "GROUND_TEAM",
+      "dstNodeId": "LEO_SAT_2",
+      "nominalLatencyMs": 40,
+      "bandwidthBps": 256000,
+      "outageRate": 0.008,
+      "outageDuration": { "distribution": "lognormal", "mu": 4.5, "sigma": 0.8 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.15 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 200
+    },
+
+    {
+      "id": "GROUND_OPS_FIBER",
+      "type": "Fiber",
+      "srcNodeId": "OPS_CENTER",
+      "dstNodeId": "GROUND_TEAM",
+      "nominalLatencyMs": 0,
+      "bandwidthBps": 10000000,
+      "outageRate": 0.001,
+      "outageDuration": { "distribution": "exponential", "mean": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 20
+    },
+
+    {
+      "id": "AIRCRAFT_LOS_GROUND",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "AIRCRAFT",
+      "dstNodeId": "GROUND_TEAM",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 50000,
+      "outageRate": 0,
+      "outageDuration": { "distribution": "fixed", "value": 10 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.0, "max": 0.05 },
+      "coverageRadiusM": 500000,
+      "congestionPenaltyMs": 0
+    },
+
+    {
+      "id": "ATM_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "ATM_CENTER",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 32,
+      "bandwidthBps": 10000000,
+      "outageRate": 0.002,
+      "outageDuration": { "distribution": "exponential", "mean": 60 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.3 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 20
+    }
+  ],
+
+  "c2Messages": [
+    { "id": "m01", "srcNodeId": "OPS_CENTER", "dstNodeId": "AIRCRAFT",   "sizeBytes": 256,  "scheduledTimeSec": 60   },
+    { "id": "m02", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 120  },
+    { "id": "m03", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 1020 },
+    { "id": "m04", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 2020 },
+    { "id": "m05", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 3020 },
+    { "id": "m06", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 4020 },
+    { "id": "m07", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 1024, "scheduledTimeSec": 4800 },
+    { "id": "m08", "srcNodeId": "AIRCRAFT",   "dstNodeId": "GROUND_TEAM","sizeBytes": 256,  "scheduledTimeSec": 4800 },
+    { "id": "m09", "srcNodeId": "AIRCRAFT",   "dstNodeId": "ATM_CENTER", "sizeBytes": 256,  "scheduledTimeSec": 4800 },
+    { "id": "m10", "srcNodeId": "GROUND_TEAM","dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 300  },
+    { "id": "m11", "srcNodeId": "GROUND_TEAM","dstNodeId": "OPS_CENTER", "sizeBytes": 256,  "scheduledTimeSec": 4900 },
+    { "id": "m12", "srcNodeId": "ATM_CENTER", "dstNodeId": "OPS_CENTER", "sizeBytes": 256,  "scheduledTimeSec": 120  },
+    { "id": "m13", "srcNodeId": "ATM_CENTER", "dstNodeId": "AIRCRAFT",   "sizeBytes": 512,  "scheduledTimeSec": 4900 },
+    { "id": "m14", "srcNodeId": "OPS_CENTER", "dstNodeId": "AIRCRAFT",   "sizeBytes": 512,  "scheduledTimeSec": 5000 },
+    { "id": "m15", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 256,  "scheduledTimeSec": 5100 },
+    { "id": "m16", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 5400 },
+    { "id": "m17", "srcNodeId": "AIRCRAFT",   "dstNodeId": "GROUND_TEAM","sizeBytes": 128,  "scheduledTimeSec": 5700 },
+    { "id": "m18", "srcNodeId": "GROUND_TEAM","dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 6100 },
+    { "id": "m19", "srcNodeId": "GROUND_TEAM","dstNodeId": "OPS_CENTER", "sizeBytes": 256,  "scheduledTimeSec": 6600 },
+    { "id": "m20", "srcNodeId": "AIRCRAFT",   "dstNodeId": "OPS_CENTER", "sizeBytes": 512,  "scheduledTimeSec": 6300 }
+  ],
+
+  "agents": [
+    {
+      "id": "aircrew_agent",
+      "nodeId": "AIRCRAFT",
+      "roleDefinitionFile": "scenarios/airdrop_mission/roles/aircrew.md",
+      "idleTimeoutSec": 900
+    },
+    {
+      "id": "ground_agent",
+      "nodeId": "GROUND_TEAM",
+      "roleDefinitionFile": "scenarios/airdrop_mission/roles/ground_personnel.md",
+      "idleTimeoutSec": 1200
+    },
+    {
+      "id": "atm_agent",
+      "nodeId": "ATM_CENTER",
+      "roleDefinitionFile": "scenarios/airdrop_mission/roles/air_traffic_management.md",
+      "idleTimeoutSec": 1800
+    },
+    {
+      "id": "command_agent",
+      "nodeId": "OPS_CENTER",
+      "roleDefinitionFile": "scenarios/airdrop_mission/roles/command_staff.md",
+      "idleTimeoutSec": 600
+    }
+  ],
+
+  "referenceBehaviorFile": "scenarios/airdrop_mission/reference_behavior.json"
+}

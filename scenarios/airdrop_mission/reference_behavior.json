@@ -1,0 +1,182 @@
+{
+  "scenarioName": "AirdropMission",
+  "roles": [
+    {
+      "role": "Aircrew",
+      "ordering": "strict",
+      "actions": [
+        {
+          "actionType": "DEPARTURE_REPORT",
+          "triggerEvent": "mission_start",
+          "expectedTimeSec": 120
+        },
+        {
+          "actionType": "POSITION_REPORT",
+          "triggerEvent": "en_route_15min",
+          "expectedTimeSec": 1020
+        },
+        {
+          "actionType": "POSITION_REPORT",
+          "triggerEvent": "en_route_30min",
+          "expectedTimeSec": 2020
+        },
+        {
+          "actionType": "POSITION_REPORT",
+          "triggerEvent": "en_route_45min",
+          "expectedTimeSec": 3020
+        },
+        {
+          "actionType": "POSITION_REPORT",
+          "triggerEvent": "en_route_60min",
+          "expectedTimeSec": 4020
+        },
+        {
+          "actionType": "THIRTY_MIN_ADVISORY",
+          "triggerEvent": "approach_30min",
+          "expectedTimeSec": 4800
+        },
+        {
+          "actionType": "REQUEST_DZ_STATUS",
+          "triggerEvent": "approach_30min",
+          "expectedTimeSec": 4800
+        },
+        {
+          "actionType": "REQUEST_AIRSPACE_CLEARANCE",
+          "triggerEvent": "approach_30min",
+          "expectedTimeSec": 4800
+        },
+        {
+          "actionType": "TEN_MIN_ADVISORY",
+          "triggerEvent": "approach_10min",
+          "expectedTimeSec": 5700
+        },
+        {
+          "actionType": "CONFIRM_GO_NOGO",
+          "triggerEvent": "final_approach",
+          "expectedTimeSec": 5100
+        },
+        {
+          "actionType": "PAYLOAD_AWAY",
+          "triggerEvent": "drop_executed",
+          "expectedTimeSec": 5400
+        },
+        {
+          "actionType": "POST_DROP_ASSESSMENT",
+          "triggerEvent": "post_drop",
+          "expectedTimeSec": 6300
+        },
+        {
+          "actionType": "MISSION_COMPLETE",
+          "triggerEvent": "departure_dz",
+          "expectedTimeSec": 6600
+        }
+      ]
+    },
+
+    {
+      "role": "Ground_Personnel",
+      "ordering": "strict",
+      "actions": [
+        {
+          "actionType": "ON_STATION_REPORT",
+          "triggerEvent": "arrival_dz",
+          "expectedTimeSec": 300
+        },
+        {
+          "actionType": "DZ_ASSESSMENT",
+          "triggerEvent": "initial_assessment",
+          "expectedTimeSec": 600
+        },
+        {
+          "actionType": "DZ_STATUS_RESPONSE",
+          "triggerEvent": "aircrew_request",
+          "expectedTimeSec": 4900
+        },
+        {
+          "actionType": "VISUAL_SIGNALS_ACTIVE",
+          "triggerEvent": "ten_min_advisory_received",
+          "expectedTimeSec": 5700
+        },
+        {
+          "actionType": "PAYLOAD_RECEIVED",
+          "triggerEvent": "payload_impact",
+          "expectedTimeSec": 6100
+        },
+        {
+          "actionType": "RECOVERY_COMPLETE",
+          "triggerEvent": "recovery_done",
+          "expectedTimeSec": 6600
+        }
+      ]
+    },
+
+    {
+      "role": "Air_Traffic_Management",
+      "ordering": "unordered",
+      "actions": [
+        {
+          "actionType": "FLIGHT_PLAN_ACKNOWLEDGED",
+          "triggerEvent": "flight_plan_received",
+          "expectedTimeSec": 120
+        },
+        {
+          "actionType": "AIRSPACE_RESERVED",
+          "triggerEvent": "reservation_confirmed",
+          "expectedTimeSec": 300
+        },
+        {
+          "actionType": "AIRSPACE_CLEARANCE_ISSUED",
+          "triggerEvent": "clearance_request_received",
+          "expectedTimeSec": 4900
+        },
+        {
+          "actionType": "DEPARTURE_CLEARANCE",
+          "triggerEvent": "payload_away_received",
+          "expectedTimeSec": 5500
+        },
+        {
+          "actionType": "AIRSPACE_RESERVATION_CLOSED",
+          "triggerEvent": "mission_complete",
+          "expectedTimeSec": 6700
+        }
+      ]
+    },
+
+    {
+      "role": "Command_Staff",
+      "ordering": "unordered",
+      "actions": [
+        {
+          "actionType": "MISSION_AUTHORIZATION",
+          "triggerEvent": "mission_start",
+          "expectedTimeSec": 60
+        },
+        {
+          "actionType": "POSITION_REPORT_ACKNOWLEDGED",
+          "triggerEvent": "position_report_received",
+          "expectedTimeSec": 1100
+        },
+        {
+          "actionType": "GO_NOGO_DECISION",
+          "triggerEvent": "confirm_go_nogo_received",
+          "expectedTimeSec": 5000
+        },
+        {
+          "actionType": "PAYLOAD_AWAY_ACKNOWLEDGED",
+          "triggerEvent": "payload_away_received",
+          "expectedTimeSec": 5500
+        },
+        {
+          "actionType": "RECOVERY_STATUS_ACKNOWLEDGED",
+          "triggerEvent": "recovery_complete_received",
+          "expectedTimeSec": 6700
+        },
+        {
+          "actionType": "MISSION_COMPLETE_ACKNOWLEDGED",
+          "triggerEvent": "mission_complete_received",
+          "expectedTimeSec": 6800
+        }
+      ]
+    }
+  ]
+}
