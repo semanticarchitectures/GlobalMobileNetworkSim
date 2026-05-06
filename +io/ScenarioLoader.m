@@ -128,13 +128,43 @@ classdef ScenarioLoader
                 end
             end
 
+            % --- Resolve agent roleDefinitionFile paths relative to scenario dir ---
+            % Requirements: 11.1
+            [scenarioDir, ~, ~] = fileparts(filePath);
+            if isfield(scenario, 'agents') && ~isempty(scenario.agents) && ...
+                    ~(isnumeric(scenario.agents) && isempty(scenario.agents))
+                agents = scenario.agents;
+                if isstruct(agents)
+                    for k = 1:numel(agents)
+                        if isfield(agents(k), 'roleDefinitionFile') && ...
+                                ~isempty(agents(k).roleDefinitionFile)
+                            agents(k).roleDefinitionFile = ...
+                                io.ScenarioLoader.resolveRelativePath( ...
+                                    agents(k).roleDefinitionFile, scenarioDir);
+                        end
+                    end
+                    scenario.agents = agents;
+                elseif iscell(agents)
+                    for k = 1:numel(agents)
+                        if isfield(agents{k}, 'roleDefinitionFile') && ...
+                                ~isempty(agents{k}.roleDefinitionFile)
+                            agents{k}.roleDefinitionFile = ...
+                                io.ScenarioLoader.resolveRelativePath( ...
+                                    agents{k}.roleDefinitionFile, scenarioDir);
+                        end
+                    end
+                    scenario.agents = agents;
+                end
+            end
+
             % --- Load reference behavior (optional) ---
             % Requirements: 14.1, 14.2, 14.4
             if isfield(scenario, 'referenceBehaviorFile') && ...
                     ~isempty(scenario.referenceBehaviorFile) && ...
                     ischar(scenario.referenceBehaviorFile)
 
-                refFilePath = scenario.referenceBehaviorFile;
+                refFilePath = io.ScenarioLoader.resolveRelativePath( ...
+                    scenario.referenceBehaviorFile, scenarioDir);
 
                 % Resolve relative path relative to the scenario file's directory
                 [scenarioDir, ~, ~] = fileparts(filePath);
@@ -563,6 +593,27 @@ classdef ScenarioLoader
                         'C2 message "%s": missing required field "%s"', ...
                         msgId, fn);
                 end
+            end
+        end
+
+        function resolved = resolveRelativePath(rawPath, baseDir)
+            % resolveRelativePath  Resolve a path relative to baseDir unless
+            %                      it is already absolute.
+            %
+            %   resolved = resolveRelativePath(rawPath, baseDir)
+
+            rawPath = char(rawPath);
+            if isempty(rawPath)
+                resolved = rawPath;
+                return;
+            end
+            % Absolute path detection: starts with / (Unix) or X:\ (Windows)
+            isAbsPath = (rawPath(1) == '/') || ...
+                        (numel(rawPath) > 1 && rawPath(2) == ':');
+            if isAbsPath || isempty(baseDir)
+                resolved = rawPath;
+            else
+                resolved = fullfile(baseDir, rawPath);
             end
         end
 

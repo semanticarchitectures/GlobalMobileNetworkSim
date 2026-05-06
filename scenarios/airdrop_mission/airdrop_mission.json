@@ -282,28 +282,28 @@
     {
       "id": "aircrew_agent",
       "nodeId": "AIRCRAFT",
-      "roleDefinitionFile": "scenarios/airdrop_mission/roles/aircrew.md",
+      "roleDefinitionFile": "roles/aircrew.md",
       "idleTimeoutSec": 900
     },
     {
       "id": "ground_agent",
       "nodeId": "GROUND_TEAM",
-      "roleDefinitionFile": "scenarios/airdrop_mission/roles/ground_personnel.md",
+      "roleDefinitionFile": "roles/ground_personnel.md",
       "idleTimeoutSec": 1200
     },
     {
       "id": "atm_agent",
       "nodeId": "ATM_CENTER",
-      "roleDefinitionFile": "scenarios/airdrop_mission/roles/air_traffic_management.md",
+      "roleDefinitionFile": "roles/air_traffic_management.md",
       "idleTimeoutSec": 1800
     },
     {
       "id": "command_agent",
       "nodeId": "OPS_CENTER",
-      "roleDefinitionFile": "scenarios/airdrop_mission/roles/command_staff.md",
+      "roleDefinitionFile": "roles/command_staff.md",
       "idleTimeoutSec": 600
     }
   ],
 
-  "referenceBehaviorFile": "scenarios/airdrop_mission/reference_behavior.json"
+  "referenceBehaviorFile": "reference_behavior.json"
 }
