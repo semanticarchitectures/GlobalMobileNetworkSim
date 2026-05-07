@@ -412,7 +412,7 @@ classdef PlotFunctions
                         gx = nodeLon(gndId);
                         gy = nodeLat(gndId);
                         h = plot(ax, [gx sx], [gy sy], '--', ...
-                            'Color', lc, 'LineWidth', 0.8, 'Alpha', 0.5);
+                            'Color', [lc, 0.5], 'LineWidth', 0.8);
                     else
                         h = plot(ax, [x1 x2], [y1 y2], '--', ...
                             'Color', lc, 'LineWidth', 0.8);
@@ -590,7 +590,7 @@ classdef PlotFunctions
                         text(ax, mx, my, label, ...
                             'FontSize', 7, 'Color', col, ...
                             'HorizontalAlignment', 'center', ...
-                            'BackgroundColor', [1 1 1 0.6]);
+                            'BackgroundColor', [1 1 1]);
                     end
                 end
             end
