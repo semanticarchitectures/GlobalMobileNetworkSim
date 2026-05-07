@@ -229,6 +229,17 @@ if useAgents && ~isempty(sc.evalResults) && numel(sc.evalResults) > 0
     end
 end
 
+% Mission map
+try
+    fig4 = io.PlotFunctions.missionMap(scenario, sc);
+    set(fig4, 'Visible', 'off');
+    saveas(fig4, fullfile(outputDir, 'AirdropMission_mission_map.png'));
+    close(fig4);
+    fprintf('      AirdropMission_mission_map.png\n');
+catch ME
+    fprintf('      [WARN] Mission map failed: %s\n', ME.message);
+end
+
 % -------------------------------------------------------------------------
 % Done
 % -------------------------------------------------------------------------
