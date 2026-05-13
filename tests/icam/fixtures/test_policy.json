@@ -1,0 +1,14 @@
+{
+  "enclaves": [
+    {"enclaveId": "enc-alpha", "cacheTtlSec": 300, "failPolicy": "closed"},
+    {"enclaveId": "enc-bravo", "cacheTtlSec": 60, "failPolicy": "open"}
+  ],
+  "trustAnchors": [
+    {"trustAnchorId": "TA1", "nodeId": "trust_node", "certificateValidityPeriodSec": 3600}
+  ],
+  "rules": [
+    {"enclave": "enc-alpha", "role": "pilot", "messageType": "POSITION_REPORT", "decision": "permit"},
+    {"enclave": "enc-alpha", "role": "pilot", "messageType": "*", "decision": "deny"},
+    {"enclave": "enc-bravo", "role": "commander", "messageType": "*", "decision": "permit"}
+  ]
+}

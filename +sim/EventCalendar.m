@@ -16,14 +16,22 @@ classdef EventCalendar < handle
     % Event type string constants
     % -----------------------------------------------------------------
     properties (Constant)
-        C2_MESSAGE_TX       = "C2_MESSAGE_TX"
-        C2_MESSAGE_RX       = "C2_MESSAGE_RX"
-        C2_MESSAGE_FAIL     = "C2_MESSAGE_FAIL"
-        OUTAGE_START        = "OUTAGE_START"
-        OUTAGE_END          = "OUTAGE_END"
-        BACKGROUND_REFRESH  = "BACKGROUND_REFRESH"
-        AGENT_IDLE_CHECK    = "AGENT_IDLE_CHECK"
-        SIM_END             = "SIM_END"
+        C2_MESSAGE_TX           = "C2_MESSAGE_TX"
+        C2_MESSAGE_RX           = "C2_MESSAGE_RX"
+        C2_MESSAGE_FAIL         = "C2_MESSAGE_FAIL"
+        OUTAGE_START            = "OUTAGE_START"
+        OUTAGE_END              = "OUTAGE_END"
+        BACKGROUND_REFRESH      = "BACKGROUND_REFRESH"
+        AGENT_IDLE_CHECK        = "AGENT_IDLE_CHECK"
+        SIM_END                 = "SIM_END"
+        % ICAM authentication event types
+        AUTH_REQUEST            = "AUTH_REQUEST"
+        AUTH_RESPONSE           = "AUTH_RESPONSE"
+        AUTH_TIMEOUT            = "AUTH_TIMEOUT"
+        % ICAM certificate and policy event types
+        CERT_RENEWAL_REQUEST    = "CERT_RENEWAL_REQUEST"
+        CERT_RENEWAL_RESPONSE   = "CERT_RENEWAL_RESPONSE"
+        POLICY_SYNC             = "POLICY_SYNC"
     end
 
     % -----------------------------------------------------------------

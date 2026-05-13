@@ -788,3 +788,533 @@ Integration tests exercise the full simulation pipeline on small scenarios:
 
 - Plotting functions (`latencyHistogram`, `outageGantt`, `fidelityBoxPlot`): call with sample data, verify no MATLAB error (Requirements 9.4, 9.5, 15.5)
 - Simulation start/pause/resume/stop API: verify state transitions work correctly (Requirement 8.2)
+
+
+---
+
+## ICAM Layer Design
+
+### Overview
+
+The Identity, Credential, and Access Management (ICAM) layer adds a fifth package — `+icam/` — to the simulator. It models authentication exchanges, certificate lifecycle, policy decision points, credential caching, and access control enforcement as first-class discrete-event participants. All ICAM traffic (authentication handshakes, PDP queries, certificate renewals, policy synchronization) is modeled as C2_Messages routed through the existing network simulation, making ICAM latency and failure modes subject to the same outage and congestion constraints as operational traffic.
+
+The ICAM layer integrates with `SimController` via an optional `icamController` property. When present, `SimController` consults the `ICAMController` before routing any `C2_MESSAGE_TX` event, and the `ICAMController` injects ICAM-related events (AUTH_REQUEST, AUTH_RESPONSE, CERT_RENEWAL_REQUEST, POLICY_SYNC, etc.) into the `EventCalendar` using the same scheduling interface as all other subsystems.
+
+### Architecture
+
+```mermaid
+graph TD
+    subgraph icam["icam package"]
+        ICAMController
+        EntityRegistry
+        CredentialStore
+        AuthenticationManager
+        PolicyDecisionPoint
+        CredentialCache
+        PolicyEnforcementPoint
+    end
+
+    subgraph sim["sim package"]
+        SimController
+        EventCalendar
+    end
+
+    subgraph network["network package"]
+        NodeRegistry
+    end
+
+    SimController -->|optional icamController| ICAMController
+    ICAMController --> EntityRegistry
+    ICAMController --> CredentialStore
+    ICAMController --> AuthenticationManager
+    ICAMController --> PolicyDecisionPoint
+    ICAMController --> CredentialCache
+    ICAMController --> PolicyEnforcementPoint
+    ICAMController --> EventCalendar
+    EntityRegistry --> NodeRegistry
+    CredentialStore --> EventCalendar
+    AuthenticationManager --> EventCalendar
+    PolicyEnforcementPoint --> CredentialCache
+    PolicyEnforcementPoint --> PolicyDecisionPoint
+```
+
+### ICAM Event Flow
+
+```mermaid
+sequenceDiagram
+    participant SimController
+    participant ICAMController
+    participant PolicyEnforcementPoint
+    participant CredentialCache
+    participant PolicyDecisionPoint
+    participant AuthenticationManager
+    participant EventCalendar
+
+    SimController->>ICAMController: checkSend(srcEntityId, dstEntityId, msgType, enclaveId, t)
+    ICAMController->>AuthenticationManager: isAuthenticated(srcEntityId, dstEntityId)
+    alt Not yet authenticated
+        AuthenticationManager->>EventCalendar: schedule(AUTH_REQUEST, t)
+        AuthenticationManager->>EventCalendar: schedule(AUTH_RESPONSE, t + authLatency)
+        Note over SimController: Original message withheld until AUTH_RESPONSE
+    end
+    ICAMController->>PolicyEnforcementPoint: checkSend(srcEntityId, dstEntityId, msgType, enclaveId, t)
+    PolicyEnforcementPoint->>CredentialCache: lookup(srcEntityId, msgType, enclaveId, t)
+    alt Cache hit
+        CredentialCache-->>PolicyEnforcementPoint: permit | deny
+    else Cache miss
+        PolicyEnforcementPoint->>PolicyDecisionPoint: evaluate(srcEntityId, dstEntityId, msgType, enclaveId, t)
+        PolicyDecisionPoint-->>PolicyEnforcementPoint: permit | deny
+        PolicyEnforcementPoint->>CredentialCache: store(...)
+    end
+    PolicyEnforcementPoint-->>ICAMController: permit | deny
+    alt Denied
+        ICAMController->>EventCalendar: record access-denied event
+    else Permitted
+        ICAMController-->>SimController: permit → route message normally
+    end
+```
+
+---
+
+## ICAM Components and Interfaces
+
+### 5.1 `icam.EntityRegistry`
+
+Manages all entities and sub-entities using struct-of-arrays storage for memory efficiency, consistent with the existing `NodeRegistry` and `LinkRegistry` design.
+
+```matlab
+% Internal storage (struct-of-arrays)
+entities.entityId       % string array, N×1
+entities.nodeId         % string array, N×1
+entities.entityType     % categorical: human | NPE
+entities.parentEntityId % string array, N×1 (empty string for top-level entities)
+entities.enclaveIds     % cell array of string arrays, N×1
+
+er = icam.EntityRegistry(entityDefs, nodeRegistry);
+% Validates all nodeIds against nodeRegistry on construction
+% Throws netsim:icam:unknownNode if any nodeId is not in NodeRegistry
+
+er.addEntity(def)                    % add a single entity definition
+entity = er.getEntity(entityId)      % returns entity struct
+subEntities = er.getSubEntities(nodeId)  % returns array of entity structs hosted at nodeId
+idx = er.indexOf(entityId)           % integer index into struct-of-arrays
+n = er.count()                       % total number of entities
+```
+
+**Design rationale**: Struct-of-arrays storage allows 10,000+ entities to be held in contiguous memory arrays, avoiding per-object overhead. The `enclaveIds` field is a cell array because each entity may belong to a variable number of enclaves.
+
+### 5.2 `icam.CredentialStore`
+
+Manages certificates and their lifecycle per entity. Certificate renewal triggers `CERT_RENEWAL_REQUEST` events into the `EventCalendar`, which are then routed as C2_Messages to the Trust_Anchor node.
+
+```matlab
+% Certificate struct schema
+% cert.issuer          string  — Trust_Anchor entity identifier
+% cert.subjectId       string  — subject Entity identifier
+% cert.publicKey       string  — synthetic public key value (hex string)
+% cert.roleBindings    struct array — {enclaveId, roleName}
+% cert.issuedTimeSec   double  — simulation time of issuance
+% cert.expirySec       double  — simulation time of expiry
+% cert.isExpired       logical — set true when expiry is detected
+
+cs = icam.CredentialStore();
+
+cs.issueCertificate(entityId, trustAnchorId, roleBindings, validityPeriodSec, simTimeSec)
+% Creates and stores a Certificate struct; computes expirySec = simTimeSec + validityPeriodSec
+
+cert = cs.getCertificate(entityId)
+% Returns the current Certificate struct for entityId; throws netsim:icam:noCertificate if none
+
+expiredIds = cs.checkExpiry(simTimeSec)
+% Returns cell array of entityIds whose expirySec <= simTimeSec and isExpired is false
+% Marks matching certificates as expired and schedules CERT_RENEWAL_REQUEST events
+
+cs.revoke(entityId)
+% Marks the certificate as expired immediately; schedules CERT_RENEWAL_REQUEST
+```
+
+### 5.3 `icam.AuthenticationManager`
+
+Tracks authentication state between entity pairs. Uses `containers.Map` keyed on a canonical pair string (`entityIdA + '|' + entityIdB`, sorted lexicographically so the key is order-independent).
+
+```matlab
+am = icam.AuthenticationManager();
+
+tf = am.isAuthenticated(entityIdA, entityIdB)
+% Returns true if the pair has a recorded successful authentication
+
+am.initiateExchange(entityIdA, entityIdB, simTimeSec, eventCalendar)
+% Schedules AUTH_REQUEST event at simTimeSec
+% Schedules AUTH_RESPONSE event at simTimeSec + authRequestLatency (derived from network path)
+% Schedules AUTH_TIMEOUT event at simTimeSec + retryLimitSec
+
+am.recordSuccess(entityIdA, entityIdB, simTimeSec)
+% Records the pair as authenticated at simTimeSec; cancels pending AUTH_TIMEOUT
+
+am.recordFailure(entityIdA, entityIdB, reason)
+% Records failure; increments retry counter; re-schedules AUTH_REQUEST if retries remain
+```
+
+**New event types added to EventCalendar:**
+
+| Type | Payload fields |
+|---|---|
+| `AUTH_REQUEST` | `srcEntityId`, `dstEntityId`, `exchangeId` |
+| `AUTH_RESPONSE` | `srcEntityId`, `dstEntityId`, `exchangeId`, `success` |
+| `AUTH_TIMEOUT` | `srcEntityId`, `dstEntityId`, `exchangeId` |
+
+### 5.4 `icam.PolicyDecisionPoint`
+
+Evaluates access control queries against a loaded policy definition. The policy is loaded from a JSON file at scenario initialization time.
+
+```matlab
+pdp = icam.PolicyDecisionPoint(policyFilePath);
+% Loads and validates policy JSON on construction
+
+result = pdp.evaluate(requestingEntityId, targetEntityId, messageType, enclaveId, simTimeSec)
+% Returns struct: {decision ('permit'|'deny'), reason (string)}
+% Applies rules in order; first matching rule wins
+% Falls back to failPolicy ('open'|'closed') if no rule matches or PDP is unreachable
+```
+
+**Policy rule struct:**
+
+| Field | Type | Description |
+|---|---|---|
+| `enclave` | string | Enclave identifier this rule applies to |
+| `role` | string | Role name that must be held in the enclave |
+| `messageType` | string | C2 message type pattern (supports `*` wildcard) |
+| `decision` | string | `'permit'` or `'deny'` |
+
+**Fail policy behavior**: When the PDP node is unreachable (detected by `ICAMController` via the network routing engine), `evaluate` is called with a `pdpUnreachable` flag. The PDP returns `permit` for fail-open or `deny` for fail-closed, and records a `pdp-unreachable` event in the Event_Log.
+
+### 5.5 `icam.CredentialCache`
+
+Per-entity cache of PDP decisions, keyed on a composite cache key.
+
+```matlab
+% Cache key: entityId + '|' + resourceType + '|' + enclaveId
+% Cache entry: struct {decision, timestamp, ttl}
+
+cc = icam.CredentialCache(ttlConfigMap);
+% ttlConfigMap: containers.Map of enclaveId → ttlSec (0 = caching disabled)
+
+result = cc.lookup(entityId, resourceType, enclaveId, simTimeSec)
+% Returns 'permit', 'deny', or '' (cache miss)
+% Returns '' if TTL is 0 for the enclave (caching disabled)
+% Returns '' if entry age > TTL
+
+cc.store(entityId, resourceType, enclaveId, decision, simTimeSec)
+% Stores decision with timestamp; no-op if TTL is 0 for the enclave
+
+cc.invalidateEnclave(enclaveId)
+% Removes all cache entries for the specified enclave across all entities
+
+stats = cc.getStats()
+% Returns struct: {hits, misses, invalidations}
+```
+
+### 5.6 `icam.PolicyEnforcementPoint`
+
+Intercepts message send and receive operations and enforces access control decisions. Uses `CredentialCache` first; falls back to `PolicyDecisionPoint` on a cache miss, which generates a C2_Message query.
+
+```matlab
+pep = icam.PolicyEnforcementPoint(credentialCache, policyDecisionPoint, eventLog);
+
+result = pep.checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)
+% Returns struct: {decision ('permit'|'deny'), reason, cacheHit (logical)}
+% On deny: records access-denied event in EventLog
+
+result = pep.checkReceive(dstEntityId, messageType, enclaveId, simTimeSec)
+% Returns struct: {decision ('permit'|'deny'), reason, cacheHit (logical)}
+% On deny: records access-denied event in EventLog
+```
+
+**Design rationale**: Separating `checkSend` and `checkReceive` allows the simulator to enforce both send-side and receive-side access control independently, matching the requirement that receiving entities must also hold appropriate role bindings (Requirement 21.4).
+
+### 5.7 `icam.ICAMController`
+
+Top-level coordinator for the ICAM layer. Wired into `SimController` as an optional property. Holds references to all ICAM subsystems and dispatches ICAM-related events from the `EventCalendar`.
+
+```matlab
+ic = icam.ICAMController();
+
+ic.initialize(scenario, nodeRegistry, eventCalendar)
+% Constructs EntityRegistry, CredentialStore, AuthenticationManager,
+% PolicyDecisionPoint, CredentialCache, PolicyEnforcementPoint
+% Issues initial certificates for all entities
+% Schedules initial CERT_RENEWAL_REQUEST events for entities with pre-configured expiry times
+
+result = ic.checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)
+% Called by SimController before routing any C2_MESSAGE_TX
+% Returns 'permit' or 'deny'
+% Initiates auth exchange if entities are not yet authenticated
+
+ic.handleAuthRequest(event)
+ic.handleAuthResponse(event)
+ic.handleAuthTimeout(event)
+ic.handleCertRenewal(event)
+% Event handlers dispatched by SimController's DES loop
+
+ic.checkExpiredCredentials(simTimeSec)
+% Called at each simulation time step; delegates to CredentialStore.checkExpiry
+
+report = ic.buildICAMReport()
+% Returns statistics struct (see Data Models section)
+```
+
+**Integration with SimController**: `SimController` gains an optional `icamController` property (default: `[]`). The DES loop is modified as follows:
+
+```matlab
+% In SimController event dispatch (C2_MESSAGE_TX handler):
+if ~isempty(sc.icamController)
+    decision = sc.icamController.checkSend(srcEntityId, dstEntityId, msgType, enclaveId, t);
+    if strcmp(decision, 'deny')
+        sc.eventLog.record(t, 'ACCESS_DENIED', srcEntityId, dstEntityId, msgType);
+        return;  % message discarded; no C2_MESSAGE_RX scheduled
+    end
+end
+% ... existing routing logic ...
+```
+
+New event types added to `EventCalendar` for ICAM:
+
+| Type | Payload fields |
+|---|---|
+| `AUTH_REQUEST` | `srcEntityId`, `dstEntityId`, `exchangeId` |
+| `AUTH_RESPONSE` | `srcEntityId`, `dstEntityId`, `exchangeId`, `success` |
+| `AUTH_TIMEOUT` | `srcEntityId`, `dstEntityId`, `exchangeId` |
+| `CERT_RENEWAL_REQUEST` | `entityId`, `trustAnchorId` |
+| `CERT_RENEWAL_RESPONSE` | `entityId`, `trustAnchorId`, `success` |
+| `POLICY_SYNC` | `srcPdpNodeId`, `dstPdpNodeId` |
+
+---
+
+## ICAM Data Models
+
+### 6.1 Entity Definition in Scenario JSON
+
+Entities are defined in a new top-level `"entities"` array in the Scenario JSON file:
+
+```json
+{
+  "entities": [
+    {
+      "entityId": "string",
+      "nodeId": "string",
+      "type": "human | NPE",
+      "parentEntityId": null,
+      "enclaveIds": ["enclave-alpha", "enclave-bravo"],
+      "roleBindings": [
+        { "enclaveId": "enclave-alpha", "roleName": "pilot" },
+        { "enclaveId": "enclave-bravo", "roleName": "mission-commander" }
+      ],
+      "certificate": {
+        "trustAnchorId": "string",
+        "validityPeriodSec": 3600
+      }
+    }
+  ]
+}
+```
+
+### 6.2 Certificate Struct Schema
+
+```json
+{
+  "issuer": "trust-anchor-node-id",
+  "subjectId": "entity-id",
+  "publicKey": "hex-string",
+  "roleBindings": [
+    { "enclaveId": "string", "roleName": "string" }
+  ],
+  "issuedTimeSec": 0.0,
+  "expirySec": 3600.0,
+  "isExpired": false
+}
+```
+
+### 6.3 Policy Definition JSON Schema
+
+```json
+{
+  "enclaves": [
+    {
+      "enclaveId": "string",
+      "cacheTtlSec": 300,
+      "failPolicy": "open | closed"
+    }
+  ],
+  "trustAnchors": [
+    {
+      "trustAnchorId": "string",
+      "nodeId": "string",
+      "certificateValidityPeriodSec": 3600
+    }
+  ],
+  "rules": [
+    {
+      "enclave": "string",
+      "role": "string",
+      "messageType": "string",
+      "decision": "permit | deny"
+    }
+  ]
+}
+```
+
+### 6.4 ICAM Statistics in Statistics_Report
+
+The `Statistics_Report` JSON is extended with a new `"icam"` block:
+
+```json
+{
+  "icam": {
+    "authExchanges": {
+      "total": 1200,
+      "successful": 1180,
+      "failed": 15,
+      "timedOut": 5
+    },
+    "cacheHitRate": 0.87,
+    "accessDeniedCount": {
+      "total": 42,
+      "perEntity": { "entity-id": 3 },
+      "perEnclave": { "enclave-alpha": 28, "enclave-bravo": 14 }
+    },
+    "certRenewals": {
+      "total": 88,
+      "successful": 85,
+      "failed": 3
+    },
+    "pdpStats": [
+      {
+        "pdpNodeId": "string",
+        "totalQueries": 5000,
+        "permitDecisions": 4800,
+        "denyDecisions": 200,
+        "meanQueryLatencyMs": 45.2
+      }
+    ],
+    "entityCounts": {
+      "human": 12,
+      "npe": 88
+    },
+    "perEnclaveRoleBindingCounts": {
+      "enclave-alpha": 45,
+      "enclave-bravo": 30
+    }
+  }
+}
+```
+
+### 6.5 Error Handling (ICAM)
+
+ICAM validation errors follow the same `netsim:component:errorType` convention as the rest of the simulator:
+
+| Condition | Identifier | Behavior |
+|---|---|---|
+| Entity references non-existent node | `netsim:icam:unknownNode` | Report entity ID + node ID, halt loading |
+| Duplicate entity identifier | `netsim:icam:duplicateEntityId` | Report entity ID, halt loading |
+| Role_Binding references undefined enclave | `netsim:icam:unknownEnclave` | Report entity ID + enclave ID, halt loading |
+| Role_Binding references undefined role name | `netsim:icam:unknownRole` | Report entity ID + role name, halt loading |
+| NPE assigned human-restricted role binding | `netsim:icam:policyViolation` | Record policy-violation event, deny assignment, continue |
+| Certificate not found for entity | `netsim:icam:noCertificate` | Report entity ID, halt if required for auth |
+| Policy definition JSON syntax error | `netsim:icam:policyJsonError` | Report file path, halt loading |
+| Trust_Anchor node unreachable at renewal | — | Record credential-renewal-failure event, retain expired cert, continue |
+| PDP node unreachable at query time | — | Apply fail-open/fail-closed policy, record pdp-unreachable event, continue |
+
+---
+
+## ICAM Correctness Properties
+
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
+### Property 20: Authentication Exchange Completeness
+
+*For any* pair of entities that have not previously communicated within a scenario run, the first message transmission attempt between them SHALL result in exactly one AUTH_REQUEST event and exactly one AUTH_RESPONSE event being scheduled in the EventCalendar before the original message is delivered, regardless of the message content or type.
+
+**Validates: Requirements 19.1, 19.3**
+
+### Property 21: Credential Cache Consistency
+
+*For any* sequence of access control queries with identical inputs (requesting entity, target entity, message type, enclave), the sequence of permit/deny decisions returned SHALL be identical whether the CredentialCache is enabled or disabled, provided no policy changes occur between queries.
+
+**Validates: Requirements 23.7**
+
+### Property 22: Certificate Expiry Detection
+
+*For any* set of certificates with configured expiry times, every certificate whose expiry simulation time is less than or equal to the current simulation time SHALL be detected and marked as expired by `CredentialStore.checkExpiry`, and a CERT_RENEWAL_REQUEST event SHALL be scheduled for each such certificate, within the same simulation time step as the expiry.
+
+**Validates: Requirements 18.3**
+
+### Property 23: Access-Denied Does Not Penalize Fidelity
+
+*For any* simulation run where an access-denied decision blocks an Agent_Action that appears in the Reference_Behavior, the Fidelity_Score for the affected agent SHALL be identical to the score computed when that action is excluded from the reference set entirely, and the missing action SHALL be annotated with reason `"access-denied"` in the Evaluation_Report.
+
+**Validates: Requirements 21.6**
+
+### Property 24: PDP Unreachable Fail Policy
+
+*For any* scenario configuration where the Policy_Decision_Point node is unreachable (all paths in outage state), every access control decision returned by the PolicyEnforcementPoint SHALL match the configured fail policy: all decisions SHALL be `'permit'` when fail-open is configured, and all decisions SHALL be `'deny'` when fail-closed is configured.
+
+**Validates: Requirements 20.5**
+
+### Property 25: Multi-Enclave Role Independence
+
+*For any* entity holding role bindings in two or more enclaves, a change to the entity's role binding in one enclave (including invalidation of its CredentialCache entries for that enclave) SHALL have no effect on the entity's role bindings or CredentialCache entries in any other enclave.
+
+**Validates: Requirements 22.2, 22.3, 22.4**
+
+### Property 26: NPE Identity Equivalence
+
+*For any* Non_Person_Entity and any human entity with equivalent identity configurations (same enclave memberships, same role bindings, same certificate validity period), the sequence of ICAM events generated (authentication exchanges, certificate renewals, PDP queries, access control decisions) SHALL be structurally identical, differing only in the entity identifier and entity type field.
+
+**Validates: Requirements 24.1, 24.3**
+
+---
+
+## ICAM Testing Strategy
+
+### Unit Tests
+
+Key unit test areas for the ICAM layer:
+
+- `icam.EntityRegistry`: construction with valid/invalid node references; `getSubEntities` returns all entities for a node; `indexOf` returns correct index; duplicate entity ID detection
+- `icam.CredentialStore`: `issueCertificate` computes correct expiry time; `checkExpiry` returns all and only expired entities; `revoke` marks certificate expired immediately
+- `icam.AuthenticationManager`: `isAuthenticated` returns false before exchange, true after `recordSuccess`; `initiateExchange` schedules correct event types; `recordFailure` increments retry counter
+- `icam.PolicyDecisionPoint`: permit/deny decisions for matching rules; first-matching-rule semantics; wildcard message type matching; fail-open and fail-closed behavior
+- `icam.CredentialCache`: cache hit within TTL; cache miss after TTL expiry; TTL=0 always misses; `invalidateEnclave` removes only entries for the specified enclave; `getStats` returns correct counts
+- `icam.PolicyEnforcementPoint`: cache hit path does not call PDP; cache miss path calls PDP and stores result; deny path records access-denied event
+- `icam.ICAMController`: `initialize` issues certificates for all entities; `checkSend` returns deny when PEP denies; `buildICAMReport` contains all required fields
+
+### Property-Based Tests
+
+Property-based tests for the ICAM layer use the same library and configuration as the existing property tests (minimum 100 iterations per property, tagged with feature and property number).
+
+**Feature: matlab-network-sim**
+
+| Property | Test description | Generator |
+|---|---|---|
+| Property 20 | Authentication exchange completeness | Random entity pairs with no prior auth state; random message types |
+| Property 21 | Credential cache consistency | Random policy rules and query sequences; cache enabled vs. disabled |
+| Property 22 | Certificate expiry detection | Random certificate sets with varying expiry times; random simulation time advances |
+| Property 23 | Access-denied does not penalize fidelity | Random scenarios with access-denied blocks on reference behavior actions |
+| Property 24 | PDP unreachable fail policy | Random scenarios with all PDP paths in outage; both fail-open and fail-closed configurations |
+| Property 25 | Multi-enclave role independence | Random entities with 2–5 enclaves; random role binding changes in one enclave |
+| Property 26 | NPE identity equivalence | Random NPE/human entity pairs with equivalent configurations; compare ICAM event sequences |
+
+Tag format: `% Feature: matlab-network-sim, Property N: <property_text>`
+
+### Integration Tests
+
+- Full ICAM pipeline on a 5-entity, 2-enclave scenario: verify auth exchanges are scheduled and completed, PDP queries generate C2 messages, access-denied events are recorded
+- Certificate expiry and renewal: verify CERT_RENEWAL_REQUEST events are generated and routed as C2 messages to the Trust_Anchor node
+- PDP unreachable scenario: verify fail-open and fail-closed policies are applied correctly and pdp-unreachable events are recorded
+- Cache invalidation on policy update: verify all affected cache entries are cleared when a POLICY_SYNC broadcast is received
+- NPE as agent operator: verify C2 messages from NPE-operated agents carry the NPE's identity in the event log
+
+### Smoke Tests
+
+- `icam.EntityRegistry` with 10,000 entities: verify construction completes without memory error (Requirement 17.5, 24.4)
+- `icam.ICAMController.initialize` on a scenario with no entities: verify no errors and empty ICAM report

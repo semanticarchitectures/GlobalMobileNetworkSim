@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "matlab": {
+      "command": "/Users/kevinkelly/Downloads/matlab-mcp-core-server",
+      "args": [
+        "--initial-working-folder=/Users/kevinkelly/GlobalMobileNetworkSim"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "evaluate_matlab_code",
+        "run_matlab_test_file"
+      ]
+    }
+  }
+}

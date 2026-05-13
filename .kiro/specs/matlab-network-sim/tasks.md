@@ -350,3 +350,277 @@ All MATLAB classes live in their respective `+sim`, `+network`, `+agent`, and `+
 - Property tests use the `matlab-prop-test` library with a minimum of 100 iterations per property
 - Unit tests use `matlab.unittest.TestCase` and live under `tests/` mirroring the package structure
 - The LLM API key is read from the `NETSIM_LLM_API_KEY` environment variable and must never be logged or committed
+
+---
+
+## Phase 5: ICAM Foundation
+
+- [ ] 21. Set up `+icam/` package structure and test directory
+  - Create the `+icam/` package folder at the project root
+  - Create the `tests/icam/` test directory mirroring the package structure
+  - Add a `tests/icam/README.md` describing the ICAM test suite conventions
+  - Add placeholder `.gitkeep` or empty test file so the directory is tracked
+  - Confirm `matlab.unittest.TestRunner` can discover the new test directory without error
+  - _Requirements: 17.1, 17.2_
+
+- [ ] 22. Implement `icam.EntityRegistry`
+  - [ ] 22.1 Implement `icam.EntityRegistry` with struct-of-arrays storage
+    - Write `+icam/EntityRegistry.m` as a handle class using struct-of-arrays storage (`entityId`, `nodeId`, `entityType`, `parentEntityId`, `enclaveIds`)
+    - Constructor accepts `entityDefs` struct array and a `nodeRegistry` reference; validate every `nodeId` against `NodeRegistry`; throw `netsim:icam:unknownNode` with entity ID + node ID on missing node
+    - Detect duplicate `entityId` values on construction; throw `netsim:icam:duplicateEntityId` with the offending ID
+    - Implement `addEntity(def)`, `getEntity(entityId)`, `getSubEntities(nodeId)`, `indexOf(entityId)`, `count()`
+    - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5_
+
+  - [ ]* 22.2 Write unit tests for `icam.EntityRegistry`
+    - Test construction with valid entity definitions referencing existing nodes
+    - Test `netsim:icam:unknownNode` thrown when entity references a missing node
+    - Test `netsim:icam:duplicateEntityId` thrown on duplicate entity IDs
+    - Test `getSubEntities` returns all and only entities hosted at a given node
+    - Test `indexOf` returns the correct integer index; test `count` returns total entity count
+    - _Requirements: 17.3, 17.4, 17.5_
+
+  - [ ]* 22.3 Write property test for `EntityRegistry` memory scalability
+    - **Property 26 (partial): NPE Identity Equivalence — struct-of-arrays storage**
+    - **Validates: Requirements 17.5, 24.4**
+    - Tag: `% Feature: matlab-network-sim, Property 26: NPE identity equivalence`
+    - Generator: random entity sets of 100–10,000 entities (mix of human and NPE); assert construction completes without memory error and `count()` equals input size
+
+- [ ] 23. Implement `icam.CredentialStore`
+  - [ ] 23.1 Implement `icam.CredentialStore` with certificate lifecycle management
+    - Write `+icam/CredentialStore.m` as a handle class
+    - Implement `issueCertificate(entityId, trustAnchorId, roleBindings, validityPeriodSec, simTimeSec)`: create certificate struct with `expirySec = simTimeSec + validityPeriodSec`, synthetic hex public key, and `isExpired = false`; store keyed by `entityId`
+    - Implement `getCertificate(entityId)`: return certificate struct; throw `netsim:icam:noCertificate` if none exists
+    - Implement `checkExpiry(simTimeSec)`: return cell array of `entityId` strings whose `expirySec <= simTimeSec` and `isExpired == false`; mark matching certificates as expired
+    - Implement `revoke(entityId)`: mark certificate as expired immediately
+    - _Requirements: 18.1, 18.2, 18.3, 18.6_
+
+  - [ ]* 23.2 Write unit tests for `icam.CredentialStore`
+    - Test `issueCertificate` computes `expirySec = simTimeSec + validityPeriodSec` correctly
+    - Test `getCertificate` returns the stored certificate; test `netsim:icam:noCertificate` thrown for unknown entity
+    - Test `checkExpiry` returns all and only entities whose expiry time has been reached; verify `isExpired` flag is set
+    - Test `revoke` marks certificate expired immediately and `checkExpiry` no longer re-reports it
+    - _Requirements: 18.1, 18.3, 18.6_
+
+  - [ ]* 23.3 Write property test for certificate expiry detection
+    - **Property 22: Certificate Expiry Detection**
+    - **Validates: Requirements 18.3**
+    - Tag: `% Feature: matlab-network-sim, Property 22: Certificate expiry detection`
+    - Generator: random sets of 1–50 certificates with random `expirySec` values; random `simTimeSec` advances; assert `checkExpiry` returns exactly the set of entities with `expirySec <= simTimeSec` and `isExpired == false` before the call
+
+- [ ] 24. Checkpoint — Ensure all ICAM foundation tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+---
+
+## Phase 6: Authentication and Policy
+
+- [ ] 25. Implement `icam.AuthenticationManager`
+  - [ ] 25.1 Implement `icam.AuthenticationManager` with pair tracking and exchange scheduling
+    - Write `+icam/AuthenticationManager.m` as a handle class
+    - Use `containers.Map` keyed on canonical pair string (`min(A,B) + '|' + max(A,B)`) to store authentication state per entity pair
+    - Implement `isAuthenticated(entityIdA, entityIdB)`: return `true` if pair has a recorded successful authentication
+    - Implement `initiateExchange(entityIdA, entityIdB, simTimeSec, eventCalendar)`: schedule `AUTH_REQUEST` event at `simTimeSec`; schedule `AUTH_RESPONSE` event at `simTimeSec + authRequestLatency`; schedule `AUTH_TIMEOUT` event at `simTimeSec + retryLimitSec`
+    - Implement `recordSuccess(entityIdA, entityIdB, simTimeSec)`: mark pair as authenticated; cancel pending `AUTH_TIMEOUT`
+    - Implement `recordFailure(entityIdA, entityIdB, reason)`: increment retry counter; re-schedule `AUTH_REQUEST` if retries remain; record failure reason
+    - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6_
+
+  - [ ]* 25.2 Write unit tests for `icam.AuthenticationManager`
+    - Test `isAuthenticated` returns `false` before any exchange and `true` after `recordSuccess`
+    - Test `initiateExchange` schedules `AUTH_REQUEST`, `AUTH_RESPONSE`, and `AUTH_TIMEOUT` events with correct types and times
+    - Test `recordFailure` increments retry counter; verify `AUTH_REQUEST` is re-scheduled when retries remain
+    - Test canonical pair key is order-independent (`A|B` same as `B|A`)
+    - _Requirements: 19.3, 19.4, 19.5_
+
+  - [ ]* 25.3 Write property test for authentication exchange completeness
+    - **Property 20: Authentication Exchange Completeness**
+    - **Validates: Requirements 19.1, 19.3**
+    - Tag: `% Feature: matlab-network-sim, Property 20: Authentication exchange completeness`
+    - Generator: random entity pairs with no prior auth state; random message types; assert exactly one `AUTH_REQUEST` and one `AUTH_RESPONSE` event are scheduled per `initiateExchange` call before `recordSuccess` is called
+
+- [ ] 26. Implement `icam.PolicyDecisionPoint`
+  - [ ] 26.1 Implement `icam.PolicyDecisionPoint` with policy JSON loading and rule evaluation
+    - Write `+icam/PolicyDecisionPoint.m` as a handle class
+    - Constructor accepts `policyFilePath`; load and validate policy JSON (enclaves, trustAnchors, rules arrays); throw `netsim:icam:policyJsonError` with file path on syntax error
+    - Validate all `roleBindings` in entity definitions reference defined enclaves and role names; throw `netsim:icam:unknownEnclave` or `netsim:icam:unknownRole` as appropriate
+    - Implement `evaluate(requestingEntityId, targetEntityId, messageType, enclaveId, simTimeSec)`: apply rules in order; first matching rule wins; support `*` wildcard in `messageType` field; return struct `{decision, reason}`
+    - Apply `failPolicy` (`'open'` or `'closed'`) when no rule matches or when called with `pdpUnreachable = true`; record `pdp-unreachable` event in Event_Log
+    - _Requirements: 20.1, 20.3, 20.5, 22.1, 22.2, 22.5_
+
+  - [ ]* 26.2 Write unit tests for `icam.PolicyDecisionPoint`
+    - Test permit and deny decisions for rules with exact `messageType` match
+    - Test first-matching-rule semantics (earlier rule takes precedence over later conflicting rule)
+    - Test `*` wildcard in `messageType` matches any message type string
+    - Test fail-open returns `'permit'` when no rule matches; test fail-closed returns `'deny'`
+    - Test `netsim:icam:policyJsonError` thrown on malformed policy JSON
+    - _Requirements: 20.3, 20.5_
+
+  - [ ]* 26.3 Write property test for PDP unreachable fail policy
+    - **Property 24: PDP Unreachable Fail Policy**
+    - **Validates: Requirements 20.5**
+    - Tag: `% Feature: matlab-network-sim, Property 24: PDP unreachable fail policy`
+    - Generator: random policy configurations with fail-open and fail-closed settings; random query inputs with `pdpUnreachable = true`; assert all decisions are `'permit'` for fail-open and `'deny'` for fail-closed
+
+- [ ] 27. Implement `icam.CredentialCache`
+  - [ ] 27.1 Implement `icam.CredentialCache` with TTL-based lookup and invalidation
+    - Write `+icam/CredentialCache.m` as a handle class
+    - Constructor accepts `ttlConfigMap` (`containers.Map` of `enclaveId → ttlSec`; `0` means caching disabled)
+    - Cache key: `entityId + '|' + resourceType + '|' + enclaveId`; cache entry struct: `{decision, timestamp, ttl}`
+    - Implement `lookup(entityId, resourceType, enclaveId, simTimeSec)`: return `'permit'`, `'deny'`, or `''` (miss); return `''` if TTL is 0 or entry age exceeds TTL
+    - Implement `store(entityId, resourceType, enclaveId, decision, simTimeSec)`: store entry; no-op if TTL is 0
+    - Implement `invalidateEnclave(enclaveId)`: remove all cache entries for the specified enclave across all entities
+    - Implement `getStats()`: return struct `{hits, misses, invalidations}`
+    - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6_
+
+  - [ ]* 27.2 Write unit tests for `icam.CredentialCache`
+    - Test cache hit within TTL returns stored decision without calling PDP
+    - Test cache miss after TTL expiry returns `''`
+    - Test TTL = 0 always returns `''` (caching disabled for enclave)
+    - Test `invalidateEnclave` removes only entries for the specified enclave; entries for other enclaves are unaffected
+    - Test `getStats` returns correct hit, miss, and invalidation counts
+    - _Requirements: 23.2, 23.3, 23.4, 23.5, 23.6_
+
+  - [ ]* 27.3 Write property test for credential cache consistency
+    - **Property 21: Credential Cache Consistency**
+    - **Validates: Requirements 23.7**
+    - Tag: `% Feature: matlab-network-sim, Property 21: Credential cache consistency`
+    - Generator: random policy rules and query sequences (same inputs repeated); assert sequence of decisions is identical with cache enabled vs. disabled, provided no policy changes occur between queries
+
+  - [ ]* 27.4 Write property test for multi-enclave role independence
+    - **Property 25: Multi-Enclave Role Independence**
+    - **Validates: Requirements 22.2, 22.3, 22.4**
+    - Tag: `% Feature: matlab-network-sim, Property 25: Multi-enclave role independence`
+    - Generator: random entities with 2–5 enclaves; random `invalidateEnclave` calls on one enclave; assert cache entries for all other enclaves are unaffected
+
+- [ ] 28. Checkpoint — Ensure all authentication and policy tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+---
+
+## Phase 7: Enforcement and Integration
+
+- [ ] 29. Implement `icam.PolicyEnforcementPoint`
+  - [ ] 29.1 Implement `icam.PolicyEnforcementPoint` with cache-first PDP-fallback enforcement
+    - Write `+icam/PolicyEnforcementPoint.m` as a handle class
+    - Constructor accepts `credentialCache`, `policyDecisionPoint`, and `eventLog` references
+    - Implement `checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)`: call `CredentialCache.lookup` first; on cache miss call `PolicyDecisionPoint.evaluate` and store result in cache; return struct `{decision, reason, cacheHit}`; on deny record `access-denied` event in Event_Log with `srcEntityId`, `dstEntityId`, `messageType`
+    - Implement `checkReceive(dstEntityId, messageType, enclaveId, simTimeSec)`: same cache-first pattern; on deny record `access-denied` event
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
+
+  - [ ]* 29.2 Write unit tests for `icam.PolicyEnforcementPoint`
+    - Test cache hit path: `CredentialCache.lookup` returns decision without calling PDP
+    - Test cache miss path: `PolicyDecisionPoint.evaluate` is called and result is stored in cache
+    - Test deny path: `access-denied` event is recorded in Event_Log with correct entity IDs and message type
+    - Test `checkReceive` enforces receive-side access control independently of `checkSend`
+    - _Requirements: 21.2, 21.3, 21.4_
+
+- [ ] 30. Implement `icam.ICAMController`
+  - [ ] 30.1 Implement `icam.ICAMController` as the top-level ICAM coordinator
+    - Write `+icam/ICAMController.m` as a handle class
+    - Implement `initialize(scenario, nodeRegistry, eventCalendar)`: construct `EntityRegistry`, `CredentialStore`, `AuthenticationManager`, `PolicyDecisionPoint`, `CredentialCache`, `PolicyEnforcementPoint`; issue initial certificates for all entities via `CredentialStore.issueCertificate`; schedule initial `CERT_RENEWAL_REQUEST` events for entities with pre-configured expiry times
+    - Implement `checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)`: call `AuthenticationManager.isAuthenticated`; if not authenticated call `initiateExchange` and return `'pending'`; call `PolicyEnforcementPoint.checkSend`; return `'permit'` or `'deny'`
+    - Implement event handlers: `handleAuthRequest(event)`, `handleAuthResponse(event)`, `handleAuthTimeout(event)`, `handleCertRenewal(event)`
+    - Implement `checkExpiredCredentials(simTimeSec)`: delegate to `CredentialStore.checkExpiry`; schedule `CERT_RENEWAL_REQUEST` events for expired entities
+    - Implement `buildICAMReport()`: aggregate statistics from all ICAM subsystems into the ICAM statistics struct (§6.4 schema)
+    - _Requirements: 17.1, 18.3, 18.4, 18.5, 19.1, 19.2, 19.5, 20.1, 20.6, 21.1, 21.5, 23.6, 24.1, 24.5_
+
+  - [ ]* 30.2 Write unit tests for `icam.ICAMController`
+    - Test `initialize` issues certificates for all entities and schedules `CERT_RENEWAL_REQUEST` events for entities with pre-configured expiry
+    - Test `checkSend` returns `'deny'` when `PolicyEnforcementPoint` denies; returns `'permit'` when permitted
+    - Test `handleAuthResponse` with `success = true` calls `AuthenticationManager.recordSuccess`
+    - Test `handleAuthTimeout` calls `AuthenticationManager.recordFailure` with reason `'timeout'`
+    - Test `buildICAMReport` returns struct containing all required top-level fields from §6.4
+    - _Requirements: 18.3, 19.3, 19.5, 20.6_
+
+- [ ] 31. Wire `ICAMController` into `SimController`
+  - [ ] 31.1 Add optional `icamController` property to `SimController` and hook into `C2_MESSAGE_TX` handler
+    - Add `icamController` property (default `[]`) to `+sim/SimController.m`
+    - In the `C2_MESSAGE_TX` event handler, add ICAM gate: if `~isempty(sc.icamController)`, call `sc.icamController.checkSend(srcEntityId, dstEntityId, msgType, enclaveId, t)`; if decision is `'deny'`, record `ACCESS_DENIED` event in Event_Log and return without routing; if `'permit'`, continue with existing routing logic
+    - Add new ICAM event type constants to `sim.EventCalendar`: `AUTH_REQUEST`, `AUTH_RESPONSE`, `AUTH_TIMEOUT`, `CERT_RENEWAL_REQUEST`, `CERT_RENEWAL_RESPONSE`, `POLICY_SYNC`
+    - Dispatch ICAM events in the DES main loop to the appropriate `ICAMController` handler methods
+    - Call `icamController.checkExpiredCredentials(simTimeSec)` at each event dispatch when `icamController` is present
+    - _Requirements: 19.2, 20.2, 20.4, 21.1, 21.2, 21.3_
+
+  - [ ]* 31.2 Write unit tests for ICAM-gated `SimController`
+    - Test that `C2_MESSAGE_TX` is discarded and `ACCESS_DENIED` event recorded when `ICAMController.checkSend` returns `'deny'`
+    - Test that `C2_MESSAGE_TX` proceeds to routing when `ICAMController.checkSend` returns `'permit'`
+    - Test that `SimController` without `icamController` set behaves identically to pre-ICAM behavior (no regression)
+    - Test that ICAM event types are dispatched to the correct `ICAMController` handler methods
+    - _Requirements: 21.1, 21.2, 21.3_
+
+- [ ] 32. Extend `ScenarioLoader` and `ReportWriter` for ICAM
+  - [ ] 32.1 Extend `io.ScenarioLoader` to parse ICAM fields
+    - In `+io/ScenarioLoader.m`, extend `load` to parse the top-level `"entities"` array from the scenario JSON (§6.1 schema): entity ID, node ID, type, parent entity ID, enclave IDs, role bindings, and certificate configuration
+    - Validate all entity `nodeId` references exist in the loaded node definitions; throw `netsim:icam:unknownNode` on missing node
+    - Validate all `roleBindings` reference defined enclaves and role names; throw `netsim:icam:unknownEnclave` or `netsim:icam:unknownRole` as appropriate
+    - Parse the `"policyDefinitionFile"` field from the scenario JSON and include it in the returned scenario struct
+    - Extend `save` to serialize the `entities` array and `policyDefinitionFile` field back to JSON
+    - _Requirements: 17.3, 17.4, 17.6, 22.5_
+
+  - [ ] 32.2 Extend `io.ReportWriter` to write ICAM statistics block
+    - In `+io/ReportWriter.m`, extend `writeStatisticsReport(stats)` to include the `"icam"` block (§6.4 schema) when `stats.icam` is present
+    - Include `authExchanges`, `cacheHitRate`, `accessDeniedCount`, `certRenewals`, `pdpStats`, `entityCounts`, and `perEnclaveRoleBindingCounts` sub-fields
+    - Include per-entity access-denied counts and per-enclave access-denied counts as specified in Requirement 21.5
+    - Include NPE counts, authentication event counts, and access-denied event counts as distinct categories per Requirement 24.5
+    - _Requirements: 20.6, 21.5, 22.6, 23.6, 24.5_
+
+  - [ ]* 32.3 Write unit tests for ICAM scenario loading and report writing
+    - Test `ScenarioLoader.load` correctly parses `entities` array and `policyDefinitionFile` from a fixture JSON
+    - Test `netsim:icam:unknownNode` thrown when entity references a missing node
+    - Test `netsim:icam:unknownEnclave` thrown when role binding references an undefined enclave
+    - Test `ReportWriter.writeStatisticsReport` includes the `"icam"` block with all required sub-fields when `stats.icam` is present
+    - Test round-trip: `load(save(scenario))` preserves all entity definitions and policy file path
+    - _Requirements: 17.3, 17.6, 20.6, 21.5_
+
+- [ ] 33. Checkpoint — Ensure all ICAM integration tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+---
+
+## Phase 8: Scenario and Final
+
+- [ ] 34. Add ICAM configuration to the airdrop mission scenario
+  - [ ] 34.1 Define entities for crew members and NPE agents in `airdrop_mission.json`
+    - Add a top-level `"entities"` array to `scenarios/airdrop_mission/airdrop_mission.json`
+    - Define one human Sub_Entity per crew member role (Aircrew, Ground_Personnel, Air_Traffic_Management, Command_Staff), each bound to the appropriate node
+    - Define one NPE Sub_Entity per AI agent in the scenario, bound to the same nodes as their human counterparts
+    - Assign each entity to the relevant enclaves (`enclave-alpha` for operational traffic, `enclave-bravo` for command traffic)
+    - _Requirements: 17.1, 17.2, 22.1, 24.1, 24.2_
+
+  - [ ] 34.2 Define enclaves, policy rules, and Trust_Anchor nodes in the airdrop scenario
+    - Create `scenarios/airdrop_mission/icam_policy.json` following the §6.3 schema
+    - Define at least two enclaves (`enclave-alpha`, `enclave-bravo`) with distinct `cacheTtlSec` and `failPolicy` settings
+    - Define policy rules permitting crew roles to send and receive operational C2 message types; define at least one deny rule to exercise the access-denied path
+    - Add Trust_Anchor node definitions to the scenario (stationary nodes acting as certificate authorities)
+    - Set `"policyDefinitionFile": "icam_policy.json"` in `airdrop_mission.json`
+    - _Requirements: 18.1, 18.2, 20.1, 21.1, 22.1, 22.3_
+
+- [ ] 35. Write integration test: ICAM-enabled airdrop mission
+  - [ ] 35.1 Write `tests/integration/ICAMAirdropIntegrationTest.m`
+    - Load the ICAM-enabled `airdrop_mission.json` scenario via `ScenarioLoader`
+    - Construct `SimController` with `icamController` wired in via `ICAMController.initialize`
+    - Run the full simulation and assert:
+      - At least one `AUTH_REQUEST` and one `AUTH_RESPONSE` event appear in the Event_Log for first-contact entity pairs
+      - At least one PDP query C2_Message is generated (cache miss path exercised)
+      - At least one `ACCESS_DENIED` event is recorded in the Event_Log (deny rule exercised)
+      - At least one `CERT_RENEWAL_REQUEST` event is scheduled (certificate expiry exercised)
+      - The Statistics_Report JSON contains the `"icam"` block with all required sub-fields
+      - `authExchanges.successful` > 0 and `certRenewals.total` > 0 in the ICAM report
+    - _Requirements: 18.3, 18.4, 19.1, 19.3, 20.2, 20.6, 21.2, 21.5, 23.6, 24.1_
+
+  - [ ]* 35.2 Write property test for NPE identity equivalence
+    - **Property 26: NPE Identity Equivalence**
+    - **Validates: Requirements 24.1, 24.3**
+    - Tag: `% Feature: matlab-network-sim, Property 26: NPE identity equivalence`
+    - Generator: random NPE/human entity pairs with equivalent enclave memberships, role bindings, and certificate validity periods; run ICAM event sequences for both; assert sequences are structurally identical (same event types and counts), differing only in entity ID and type fields
+
+  - [ ]* 35.3 Write property test for access-denied does not penalize fidelity
+    - **Property 23: Access-Denied Does Not Penalize Fidelity**
+    - **Validates: Requirements 21.6**
+    - Tag: `% Feature: matlab-network-sim, Property 23: Access-denied does not penalize fidelity`
+    - Generator: random scenarios where access-denied decisions block Agent_Actions that appear in the Reference_Behavior; assert Fidelity_Score equals score computed with those actions excluded from the reference set; assert missing actions annotated with `"access-denied"`
+
+- [ ] 36. Final ICAM checkpoint — Ensure all tests pass
+  - Run `tests/run_all_tests.m` and confirm all unit, integration, and property tests pass
+  - Ensure all ICAM-related tests in `tests/icam/` pass without error
+  - Ensure the airdrop mission integration test (`ICAMAirdropIntegrationTest`) passes end-to-end
+  - Ensure all tests pass, ask the user if questions arise.
