@@ -73,11 +73,14 @@ classdef GeoUtilsTest < matlab.unittest.TestCase
 
         function testLondonToNewYorkApproximate(testCase)
             % London (51.5074 N, 0.1278 W) to New York (40.7128 N, 74.0060 W).
-            % Known geodesic distance ≈ 5,570,538 m.
-            expected = 5570538;
+            % WGS-84 geodesic distance computed by Vincenty ≈ 5,585,234 m.
+            % Note: this differs from the spherical great-circle approximation
+            % (~5,570,538 m) because Vincenty uses the WGS-84 ellipsoid.
+            % We verify within 0.1% of the true WGS-84 geodesic value.
+            expected = 5585234;   % metres (WGS-84 Vincenty reference)
             dist = network.GeoUtils.vincenty(51.5074, -0.1278, 40.7128, -74.0060);
             testCase.verifyEqual(dist, expected, 'RelTol', 0.001, ...
-                'London-to-New-York distance should be ~5,570,538 m (±0.1%).');
+                'London-to-New-York WGS-84 geodesic distance should be ~5,585,234 m (±0.1%).');
         end
 
         % -----------------------------------------------------------------

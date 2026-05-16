@@ -40,6 +40,9 @@ classdef SimController < handle
         agentRegistry         % agent.AgentRegistry (or [])
         fidelityEvaluator     % agent.FidelityEvaluator (or [])
 
+        % ICAM layer (empty [] when scenario has no entities/policyDefinitionFile)
+        icamController        % icam.ICAMController (or [])
+
         % Per-run evaluation results (struct array, populated at SIM_END)
         % Each element: agentId, role, fidelityScore, missingActions,
         %               extraActions, deviations
@@ -170,6 +173,15 @@ classdef SimController < handle
             if isfield(scenario, 'referenceBehavior') && ...
                     ~isempty(scenario.referenceBehavior)
                 sc.fidelityEvaluator = agent.FidelityEvaluator(scenario.referenceBehavior);
+            end
+
+            % Construct ICAM layer if scenario has entities or policyDefinitionFile.
+            sc.icamController = [];
+            if ~isempty(sc.nodeRegistry) && ...
+                    (isfield(scenario, 'entities') || isfield(scenario, 'policyDefinitionFile'))
+                ic = icam.ICAMController();
+                ic.initialize(scenario, sc.nodeRegistry, sc.eventCalendar);
+                sc.icamController = ic;
             end
         end
     end
@@ -464,6 +476,11 @@ classdef SimController < handle
                 report.agentFidelity.min  = NaN;
                 report.agentFidelity.max  = NaN;
             end
+
+            % ICAM statistics block — included when icamController is present.
+            if ~isempty(sc.icamController)
+                report.icam = sc.icamController.buildICAMReport();
+            end
         end
 
         function report = buildEvalReport(sc)
@@ -551,6 +568,26 @@ classdef SimController < handle
                 case sim.EventCalendar.AGENT_IDLE_CHECK
                     sc.handleAgentIdleCheck(event);
 
+                case sim.EventCalendar.AUTH_REQUEST
+                    if ~isempty(sc.icamController)
+                        sc.icamController.handleAuthRequest(event);
+                    end
+
+                case sim.EventCalendar.AUTH_RESPONSE
+                    if ~isempty(sc.icamController)
+                        sc.icamController.handleAuthResponse(event);
+                    end
+
+                case sim.EventCalendar.AUTH_TIMEOUT
+                    if ~isempty(sc.icamController)
+                        sc.icamController.handleAuthTimeout(event);
+                    end
+
+                case sim.EventCalendar.CERT_RENEWAL_REQUEST
+                    if ~isempty(sc.icamController)
+                        sc.icamController.handleCertRenewal(event);
+                    end
+
                 case sim.EventCalendar.SIM_END
                     sc.handleSimEnd(event);
 
@@ -576,6 +613,23 @@ classdef SimController < handle
             dstId  = sim.SimController.payloadField(p, 'dstNodeId','');
 
             sc.stats.c2MessagesTx = sc.stats.c2MessagesTx + uint64(1);
+
+            % ICAM gate: check send permission
+            if ~isempty(sc.icamController)
+                % Determine entity IDs from node IDs (use node ID as entity ID if no entity registry)
+                srcEntityId = srcId;  % simplified: use nodeId as entityId
+                dstEntityId = dstId;
+                enclaveId = 'default';
+                icamDecision = sc.icamController.checkSend(srcEntityId, dstEntityId, char(msgId), enclaveId, sc.simTimeSec);
+                if strcmp(icamDecision, 'deny')
+                    % Record access-denied event and discard message
+                    sc.stats.c2MessagesFail = sc.stats.c2MessagesFail + uint64(1);
+                    sc.appendLog(event, '', msgId, srcId, dstId, NaN, 'access-denied');
+                    return;
+                end
+                % 'pending' means auth exchange initiated — still route the message
+                % (simplified: don't block on pending, just proceed)
+            end
 
             % If no routing engine, fail immediately.
             if isempty(sc.routingEngine)
@@ -832,6 +886,11 @@ classdef SimController < handle
             sc.appendLog(event, '', '', '', '', NaN, '');
             if ~isempty(sc.wallClockStart)
                 sc.wallClockDurationSec = toc(sc.wallClockStart);
+            end
+
+            % Check for expired ICAM credentials at simulation end.
+            if ~isempty(sc.icamController)
+                sc.icamController.checkExpiredCredentials(sc.simTimeSec);
             end
 
             % Run fidelity evaluation for each agent if both registries exist.

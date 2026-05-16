@@ -291,6 +291,83 @@ classdef ReportWriterTest < matlab.unittest.TestCase
                 'Constructor should create the output directory');
         end
 
+        % ------------------------------------------------------------------
+        % Test 6 (Task 32.2): writeStatisticsReport passes through icam field
+        % ------------------------------------------------------------------
+        function testWriteStatisticsReportPassesThroughICAMField(testCase)
+            % Verify that writeStatisticsReport includes the icam block when
+            % statsReport.icam is present. The existing jsonencode call handles
+            % this automatically — this test confirms the field is preserved.
+            %
+            % Requirements: 20.6, 21.5
+
+            outDir = tempname();
+            testCase.TempDirs{end+1} = outDir;
+
+            rw = io.ReportWriter(outDir, 'icam_test');
+
+            % Build a stats report with an icam block
+            statsReport.scenarioName         = 'icam-test';
+            statsReport.simStartTimeSec      = 0;
+            statsReport.simEndTimeSec        = 100;
+            statsReport.wallClockDurationSec = 1.5;
+            statsReport.c2Messages.scheduled = 5;
+            statsReport.c2Messages.delivered = 4;
+            statsReport.c2Messages.failed    = 1;
+            statsReport.latency.meanMs       = 50.0;
+            statsReport.latency.medianMs     = 48.0;
+            statsReport.latency.p95Ms        = 90.0;
+            statsReport.perLink              = struct('linkId', {}, 'meanEffectiveBwBps', {}, ...
+                                                      'meanBgLoadFraction', {}, ...
+                                                      'totalC2MessagesRouted', {}, ...
+                                                      'totalOutageDurationSec', {}, ...
+                                                      'outageFraction', {});
+            statsReport.agentFidelity.mean   = NaN;
+            statsReport.agentFidelity.min    = NaN;
+            statsReport.agentFidelity.max    = NaN;
+
+            % Add ICAM block
+            statsReport.icam.authExchanges.total      = uint64(3);
+            statsReport.icam.authExchanges.successful = uint64(2);
+            statsReport.icam.authExchanges.failed     = uint64(0);
+            statsReport.icam.authExchanges.timedOut   = uint64(1);
+            statsReport.icam.cacheHitRate             = 0.75;
+            statsReport.icam.accessDeniedCount.total  = 1;
+            statsReport.icam.certRenewals.total       = uint64(0);
+            statsReport.icam.certRenewals.successful  = uint64(0);
+            statsReport.icam.certRenewals.failed      = uint64(0);
+            statsReport.icam.entityCounts.human       = 2;
+            statsReport.icam.entityCounts.npe         = 1;
+
+            % Write the report
+            rw.writeStatisticsReport(statsReport);
+
+            % Read it back and verify icam field is present
+            statsFile = fullfile(outDir, 'icam_test_stats.json');
+            testCase.verifyTrue(exist(statsFile, 'file') == 2, ...
+                'Statistics report file should exist after writeStatisticsReport.');
+
+            rawText = fileread(statsFile);
+            loaded  = jsondecode(rawText);
+
+            testCase.verifyTrue(isfield(loaded, 'icam'), ...
+                'Loaded stats report should contain icam field.');
+            testCase.verifyTrue(isfield(loaded.icam, 'authExchanges'), ...
+                'icam block should contain authExchanges field.');
+            testCase.verifyTrue(isfield(loaded.icam, 'cacheHitRate'), ...
+                'icam block should contain cacheHitRate field.');
+            testCase.verifyTrue(isfield(loaded.icam, 'accessDeniedCount'), ...
+                'icam block should contain accessDeniedCount field.');
+            testCase.verifyTrue(isfield(loaded.icam, 'certRenewals'), ...
+                'icam block should contain certRenewals field.');
+            testCase.verifyTrue(isfield(loaded.icam, 'entityCounts'), ...
+                'icam block should contain entityCounts field.');
+
+            % Verify cacheHitRate value is preserved
+            testCase.verifyEqual(loaded.icam.cacheHitRate, 0.75, 'AbsTol', 1e-10, ...
+                'cacheHitRate should be preserved through JSON round-trip.');
+        end
+
     end % methods (Test)
 
 end % classdef

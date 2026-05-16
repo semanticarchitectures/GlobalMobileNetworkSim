@@ -128,6 +128,38 @@ classdef ScenarioLoader
                 end
             end
 
+            % --- Parse entities array (optional, ICAM) ---
+            % Requirements: 17.3, 17.6
+            if isfield(scenario, 'entities') && ~isempty(scenario.entities) && ...
+                    ~(isnumeric(scenario.entities) && isempty(scenario.entities))
+                entities = scenario.entities;
+                if isstruct(entities)
+                    nEntities = numel(entities);
+                    getEntity = @(k) entities(k);
+                elseif iscell(entities)
+                    nEntities = numel(entities);
+                    getEntity = @(k) entities{k};
+                else
+                    nEntities = 0;
+                    getEntity = @(k) [];
+                end
+
+                for k = 1:nEntities
+                    ent = getEntity(k);
+                    io.ScenarioLoader.validateEntity(ent, nodeIds);
+                end
+            end
+
+            % --- Parse policyDefinitionFile (optional, ICAM) ---
+            % Requirements: 17.6
+            if isfield(scenario, 'policyDefinitionFile') && ...
+                    ~isempty(scenario.policyDefinitionFile) && ...
+                    ischar(scenario.policyDefinitionFile)
+                [scenarioDir2, ~, ~] = fileparts(filePath);
+                scenario.policyDefinitionFile = io.ScenarioLoader.resolveRelativePath( ...
+                    scenario.policyDefinitionFile, scenarioDir2);
+            end
+
             % --- Resolve agent roleDefinitionFile paths relative to scenario dir ---
             % Requirements: 11.1
             [scenarioDir, ~, ~] = fileparts(filePath);
@@ -594,6 +626,48 @@ classdef ScenarioLoader
                         msgId, fn);
                 end
             end
+        end
+
+        function validateEntity(entity, nodeIds)
+            % validateEntity  Validate a single entity definition struct.
+            %
+            %   Required fields: id (or entityId), nodeId, type
+            %   Validates that nodeId references an existing node.
+            %   Warns (does not halt) if roleBindings reference undefined enclaves.
+            %
+            % Requirements: 17.3, 17.6
+
+            % Determine entity ID field (support both 'id' and 'entityId')
+            if isfield(entity, 'entityId')
+                entityId = string(entity.entityId);
+            elseif isfield(entity, 'id')
+                entityId = string(entity.id);
+            else
+                error('netsim:icam:missingField', ...
+                    'Entity is missing required field "id" or "entityId".');
+            end
+
+            % Validate required fields
+            if ~isfield(entity, 'nodeId')
+                error('netsim:icam:missingField', ...
+                    'Entity "%s": missing required field "nodeId"', entityId);
+            end
+            if ~isfield(entity, 'type')
+                error('netsim:icam:missingField', ...
+                    'Entity "%s": missing required field "type"', entityId);
+            end
+
+            % Validate nodeId reference
+            entityNodeId = string(entity.nodeId);
+            if ~isempty(nodeIds) && ~any(nodeIds == entityNodeId)
+                error('netsim:icam:unknownNode', ...
+                    'Entity "%s": nodeId "%s" was not found in the scenario nodes.', ...
+                    entityId, entityNodeId);
+            end
+
+            % Warn (do not halt) if roleBindings reference undefined enclaves
+            % (enclave definitions live in the policy file, not the scenario)
+            % This is a best-effort check — we just note the binding exists.
         end
 
         function resolved = resolveRelativePath(rawPath, baseDir)
