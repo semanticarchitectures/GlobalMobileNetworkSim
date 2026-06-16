@@ -1,0 +1,17 @@
+{
+  "enclaves": [
+    {
+      "enclaveId": "default",
+      "cacheTtlSec": 300,
+      "failPolicy": "open"
+    }
+  ],
+  "trustAnchors": [
+    {
+      "trustAnchorId": "auth-ca",
+      "nodeId": "AUTH_SERVER",
+      "certificateValidityPeriodSec": 3600
+    }
+  ],
+  "rules": []
+}

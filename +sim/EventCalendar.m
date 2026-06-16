@@ -24,6 +24,8 @@ classdef EventCalendar < handle
         BACKGROUND_REFRESH      = "BACKGROUND_REFRESH"
         AGENT_IDLE_CHECK        = "AGENT_IDLE_CHECK"
         SIM_END                 = "SIM_END"
+        % Position tracking
+        NODE_POSITION           = "NODE_POSITION"
         % ICAM authentication event types
         AUTH_REQUEST            = "AUTH_REQUEST"
         AUTH_RESPONSE           = "AUTH_RESPONSE"
