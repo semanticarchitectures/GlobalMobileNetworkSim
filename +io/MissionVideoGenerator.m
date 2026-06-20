@@ -169,6 +169,11 @@ classdef MissionVideoGenerator < handle
                 vw.FrameRate = frameRate;
                 open(vw);
 
+                % Capture a reference frame to lock the video dimensions
+                drawnow;
+                refFrame = getframe(fig);
+                expectedSize = size(refFrame.cdata);
+
                 % Render frames sequentially
                 for frameIdx = 1:totalFrames
                     currentFrame = frameIdx;
@@ -181,6 +186,13 @@ classdef MissionVideoGenerator < handle
                     end
                     snapshot = snapshots(snapshotIdx);
 
+                    % Delete and recreate geoaxes each frame to prevent
+                    % any stale text/graphics from accumulating
+                    delete(ax);
+                    ax = geoaxes(fig);
+                    ax.Basemap = 'none';
+                    geolimits(ax, latLim, lonLim);
+
                     % Render the frame (respects showLinks via obj.config)
                     if obj.config.showLinks
                         obj.renderFrame(fig, ax, snapshot, simTimeSec, scenarioStruct, snapshots);
@@ -188,11 +200,14 @@ classdef MissionVideoGenerator < handle
                         obj.renderFrame(fig, ax, snapshot, simTimeSec, [], snapshots);
                     end
 
-                    % Reset geographic limits after render (renderFrame may clear axes)
+                    % Re-apply geographic limits in case renderFrame altered them
                     geolimits(ax, latLim, lonLim);
 
-                    % Capture frame and write to video
+                    % Capture frame and resize to match expected dimensions
                     frame = getframe(fig);
+                    if ~isequal(size(frame.cdata), expectedSize)
+                        frame.cdata = imresize(frame.cdata, [expectedSize(1) expectedSize(2)]);
+                    end
                     writeVideo(vw, frame);
                 end
 
@@ -627,8 +642,7 @@ classdef MissionVideoGenerator < handle
             %
             % Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
 
-            % Fully clear the axes — delete all children to prevent stacking
-            delete(ax.Children);
+            % Axes is freshly created each frame by writeVideo — just enable hold
             hold(ax, 'on');
 
             % Render coastline and boundary basemap
@@ -734,6 +748,7 @@ classdef MissionVideoGenerator < handle
             end
 
             % Render communication links if showLinks is enabled
+            % Only display links that are currently active (within range)
             if obj.config.showLinks && ~isempty(scenarioStruct) && isfield(scenarioStruct, 'links')
                 % Define link type colors
                 linkColors = struct( ...
@@ -741,6 +756,14 @@ classdef MissionVideoGenerator < handle
                     'GEO_Satellite', [0.8 0.2 0.8], ...
                     'Fiber',         [0.0 0.8 0.0], ...
                     'Line_Of_Sight', [1.0 0.5 0.0]);
+
+                % Max range thresholds for link types (metres)
+                % LEO satellites: ~2500 km visibility cone from ground
+                % GEO satellites: always visible from same hemisphere
+                % LOS: use coverageRadiusM from link def, default 500 km
+                % Fiber: always connected (no range limit)
+                leoMaxRangeM = 2500000;
+                geoMaxRangeM = 42000000;  % effectively always in range
 
                 % Track which link types have been plotted (for legend)
                 plottedLinkTypes = {};
@@ -760,6 +783,39 @@ classdef MissionVideoGenerator < handle
                     end
 
                     linkType = lnk.type;
+
+                    % Check if link is within range based on type
+                    if strcmp(linkType, 'Fiber')
+                        % Fiber links are always active (physical connection)
+                        inRange = true;
+                    else
+                        % Compute great-circle distance between src and dst
+                        distM = obj.haversineDistance( ...
+                            nodeLats(srcIdx), nodeLons(srcIdx), ...
+                            nodeLats(dstIdx), nodeLons(dstIdx));
+
+                        switch linkType
+                            case 'LEO_Satellite'
+                                inRange = (distM <= leoMaxRangeM);
+                            case 'GEO_Satellite'
+                                inRange = (distM <= geoMaxRangeM);
+                            case 'Line_Of_Sight'
+                                if isfield(lnk, 'coverageRadiusM') && ...
+                                        ~isempty(lnk.coverageRadiusM) && ...
+                                        ~isnan(lnk.coverageRadiusM)
+                                    inRange = (distM <= lnk.coverageRadiusM);
+                                else
+                                    inRange = (distM <= 500000);  % default 500 km
+                                end
+                            otherwise
+                                inRange = true;
+                        end
+                    end
+
+                    if ~inRange
+                        continue;  % Skip out-of-range links
+                    end
+
                     if isfield(linkColors, linkType)
                         col = linkColors.(linkType);
                     else
@@ -1011,6 +1067,21 @@ classdef MissionVideoGenerator < handle
                     return;
                 end
             end
+        end
+
+        function distM = haversineDistance(~, lat1, lon1, lat2, lon2)
+            % haversineDistance  Compute great-circle distance between two points.
+            %
+            %   distM = obj.haversineDistance(lat1, lon1, lat2, lon2)
+            %
+            %   Inputs are in degrees. Returns distance in metres.
+
+            R = 6371000;  % Earth radius in metres
+            dLat = deg2rad(lat2 - lat1);
+            dLon = deg2rad(lon2 - lon1);
+            a = sin(dLat/2)^2 + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * sin(dLon/2)^2;
+            c = 2 * atan2(sqrt(a), sqrt(1 - a));
+            distM = R * c;
         end
 
         function validConfig = validateConfig(~, config)

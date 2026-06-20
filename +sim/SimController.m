@@ -866,7 +866,8 @@ classdef SimController < handle
                 sc.linkStats(lkIdChar) = entry;
             end
 
-            sc.appendLog(event, linkId, '', '', '', NaN, '');
+            % Background refresh is not logged to the event log to reduce noise.
+            % The resample still happens internally and affects link bandwidth.
         end
 
         function handleAgentIdleCheck(sc, event)
