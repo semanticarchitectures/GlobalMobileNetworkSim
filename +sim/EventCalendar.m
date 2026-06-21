@@ -34,6 +34,14 @@ classdef EventCalendar < handle
         CERT_RENEWAL_REQUEST    = "CERT_RENEWAL_REQUEST"
         CERT_RENEWAL_RESPONSE   = "CERT_RENEWAL_RESPONSE"
         POLICY_SYNC             = "POLICY_SYNC"
+        % Data fabric event types
+        DATA_INGEST             = "DATA_INGEST"
+        DATA_FETCH              = "DATA_FETCH"
+        DATA_QUERY              = "DATA_QUERY"
+        DATA_REPLICATE          = "DATA_REPLICATE"
+        DATA_FETCH_RESULT       = "DATA_FETCH_RESULT"
+        DATA_FETCH_DENIED       = "DATA_FETCH_DENIED"
+        DATA_QUERY_RESULT       = "DATA_QUERY_RESULT"
     end
 
     % -----------------------------------------------------------------
