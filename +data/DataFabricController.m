@@ -16,6 +16,11 @@ classdef DataFabricController < handle
         runId (1,1) string = ""
         Store       % data.SimulationStore handle (public read for QueryEngine access)
         Registry    % data.RunRegistry handle (public read)
+
+        % Fabric mode properties (optional, populated by initFabric)
+        fabricHandler       % fabric.FabricEventHandler handle (or [])
+        replicationEngine   % fabric.ReplicationEngine handle (or [])
+        dataStoreRegistry   % fabric.DataStoreRegistry handle (or [])
     end
 
     properties (Access = private)
@@ -24,6 +29,7 @@ classdef DataFabricController < handle
         FlushEventThreshold (1,1) double
         FlushTimeIntervalSec (1,1) double
         RetentionPolicy   % struct with maxRuns, maxAgeDays, keepTagged (or [])
+        c2LogDataStoreId (1,1) string = ""  % DataStore for auto C2 log creation
 
         Archiver    % data.EventArchiver handle (created per-run)
     end
@@ -74,6 +80,16 @@ classdef DataFabricController < handle
             obj.Store = data.SimulationStore(obj.ArchivePath);
             obj.Registry = data.RunRegistry(obj.RegistryPath);
             obj.Archiver = [];
+
+            % Initialize fabric mode properties as empty
+            obj.fabricHandler = [];
+            obj.replicationEngine = [];
+            obj.dataStoreRegistry = [];
+
+            % Parse c2LogDataStoreId if provided
+            if isfield(config, 'c2LogDataStoreId')
+                obj.c2LogDataStoreId = string(config.c2LogDataStoreId);
+            end
 
             % Parse retention policy if provided
             if isfield(config, 'retentionPolicy') && isstruct(config.retentionPolicy)
@@ -126,6 +142,11 @@ classdef DataFabricController < handle
             % Snapshot scenario JSON to the archive
             scenarioJson = jsonencode(scenarioSnapshot);
             obj.Store.writeScenario(obj.runId, string(scenarioJson));
+
+            % Initialize fabric mode if scenario has DataStore nodes
+            if obj.hasDataStoreNodes(sc.scenario)
+                obj.initFabric(sc.scenario, sc.eventCalendar);
+            end
         end
 
         function archiveEvent(obj, event)
@@ -332,6 +353,160 @@ classdef DataFabricController < handle
                 catch ME
                     warning('netsim:data:retentionError', ...
                         'Failed to remove run "%s": %s', rid, ME.message);
+                end
+            end
+        end
+
+        function initFabric(obj, scenario, eventCalendar)
+            % INITFABRIC Initialize fabric mode from scenario DataStore nodes.
+            %
+            % Creates a DataStoreRegistry from the scenario, instantiates a
+            % FabricEventHandler and ReplicationEngine, and wires them together.
+            %
+            % Args:
+            %   scenario (struct): Scenario struct (from io.ScenarioLoader.load).
+            %   eventCalendar (sim.EventCalendar): The simulation event calendar.
+            %
+            % Requirements: R33, R35, R39
+
+            arguments
+                obj
+                scenario (1,1) struct
+                eventCalendar (1,1) sim.EventCalendar
+            end
+
+            % Create DataStoreRegistry from scenario nodes
+            obj.dataStoreRegistry = fabric.DataStoreRegistry.fromScenario(scenario);
+
+            % Create FabricEventHandler with the registry
+            obj.fabricHandler = fabric.FabricEventHandler(obj.dataStoreRegistry);
+
+            % Create ReplicationEngine with registry and event calendar
+            obj.replicationEngine = fabric.ReplicationEngine(obj.dataStoreRegistry, eventCalendar);
+
+            % Attach replication engine to handler
+            obj.fabricHandler.setReplicationEngine(obj.replicationEngine);
+        end
+
+        function logEntry = handleDataEvent(obj, event, simTimeSec, eventCalendar, icamController)
+            % HANDLEDATAEVENT Dispatch a data fabric event to the appropriate handler.
+            %
+            % Routes events by type to FabricEventHandler or ReplicationEngine.
+            %
+            % Args:
+            %   event (struct): Event struct with type and payload.
+            %   simTimeSec (double): Current simulation time in seconds.
+            %   eventCalendar (sim.EventCalendar): The event calendar for scheduling.
+            %   icamController: icam.ICAMController handle or [] if not configured.
+            %
+            % Returns:
+            %   logEntry (struct): Log entry from the handler, or empty struct
+            %       if fabric mode is not initialized.
+            %
+            % Requirements: R34, R36, R37, R39
+
+            arguments
+                obj
+                event (1,1) struct
+                simTimeSec (1,1) double
+                eventCalendar (1,1) sim.EventCalendar
+                icamController = []
+            end
+
+            % If fabric mode is not initialized, return empty
+            if isempty(obj.fabricHandler)
+                logEntry = struct();
+                return;
+            end
+
+            eventType = string(event.type);
+
+            switch eventType
+                case sim.EventCalendar.DATA_INGEST
+                    logEntry = obj.fabricHandler.handleIngest(event, simTimeSec, eventCalendar);
+
+                case sim.EventCalendar.DATA_REPLICATE
+                    logEntry = obj.replicationEngine.handleReplicate(event, simTimeSec);
+
+                case sim.EventCalendar.DATA_FETCH
+                    logEntry = obj.fabricHandler.handleFetch(event, simTimeSec, icamController);
+
+                case sim.EventCalendar.DATA_QUERY
+                    logEntry = obj.fabricHandler.handleQuery(event, simTimeSec, icamController);
+
+                otherwise
+                    logEntry = struct( ...
+                        'type', "data_event_unknown", ...
+                        'eventType', eventType, ...
+                        'simTimeSec', simTimeSec);
+            end
+        end
+
+        function payload = onC2MessageDelivered(obj, event, simTimeSec)
+            % ONC2MESSAGEDELIVERED Create a c2_log DataItem on C2 message delivery.
+            %
+            % If fabric mode is active and c2LogDataStoreId is configured,
+            % calls createC2LogItem to produce a DATA_INGEST payload. The
+            % caller (SimController) is responsible for scheduling the event.
+            %
+            % Args:
+            %   event (struct): The C2_MESSAGE_RX event struct.
+            %   simTimeSec (double): Current simulation time in seconds.
+            %
+            % Returns:
+            %   payload (struct): DATA_INGEST payload struct, or empty struct
+            %       if fabric handler is not configured or c2LogDataStoreId is empty.
+            %
+            % Requirements: R34, R38
+
+            arguments
+                obj
+                event (1,1) struct
+                simTimeSec (1,1) double
+            end
+
+            % Check that fabric mode is active and c2LogDataStoreId is configured
+            if isempty(obj.fabricHandler) || strlength(obj.c2LogDataStoreId) == 0
+                payload = struct();
+                return;
+            end
+
+            % Delegate to FabricEventHandler.createC2LogItem
+            payload = obj.fabricHandler.createC2LogItem(event, simTimeSec, obj.c2LogDataStoreId);
+        end
+    end
+
+    methods (Access = private)
+        function tf = hasDataStoreNodes(~, scenario)
+            % HASDATASTORENODES Check if scenario contains DataStore nodes.
+            %
+            % Args:
+            %   scenario (struct): The scenario struct.
+            %
+            % Returns:
+            %   tf (logical): true if any node has dataStore = true.
+
+            tf = false;
+
+            if ~isfield(scenario, 'nodes') || isempty(scenario.nodes)
+                return;
+            end
+
+            nodes = scenario.nodes;
+            if isstruct(nodes)
+                for k = 1:numel(nodes)
+                    if isfield(nodes(k), 'dataStore') && isequal(nodes(k).dataStore, true)
+                        tf = true;
+                        return;
+                    end
+                end
+            elseif iscell(nodes)
+                for k = 1:numel(nodes)
+                    nd = nodes{k};
+                    if isfield(nd, 'dataStore') && isequal(nd.dataStore, true)
+                        tf = true;
+                        return;
+                    end
                 end
             end
         end

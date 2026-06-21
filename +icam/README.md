@@ -38,6 +38,39 @@ All ICAM errors follow the `netsim:icam:<errorType>` convention:
 | `netsim:icam:noCertificate` | Certificate not found for entity |
 | `netsim:icam:policyJsonError` | Policy definition JSON syntax error |
 
+## Data Item Access Control (Phase 10 Extension)
+
+The `PolicyDecisionPoint` supports data-item-level access control using the `messageType` field convention `'data_item:<classification>'`. Because the PDP already supports wildcard (`'*'`) matching in rule `messageType` fields, no code changes are required — the existing wildcard logic naturally extends to data fabric access control.
+
+### Policy Rule Examples
+
+```json
+{
+  "rules": [
+    {"enclave": "enclave-alpha", "role": "pilot", "messageType": "data_item:UNCLASSIFIED", "decision": "permit"},
+    {"enclave": "enclave-bravo", "role": "mission-commander", "messageType": "data_item:*", "decision": "permit"},
+    {"enclave": "enclave-alpha", "role": "sensor-operator", "messageType": "data_item:SECRET", "decision": "deny"}
+  ]
+}
+```
+
+### How It Works
+
+1. When a `DATA_FETCH` or `DATA_QUERY` event is processed, the `FabricEventHandler` constructs a `messageType` string of the form `'data_item:<classification>'` (e.g., `'data_item:SECRET'`, `'data_item:UNCLASSIFIED'`).
+2. This `messageType` is passed to `ICAMController.checkSend` (or the PEP directly), which evaluates it against the policy rules.
+3. The PDP's existing rule-matching logic handles these patterns:
+   - **Exact match**: `"messageType": "data_item:SECRET"` matches only requests for SECRET-classified items.
+   - **Wildcard match**: `"messageType": "data_item:*"` matches requests for items of _any_ classification (via the existing `'*'` wildcard in the PDP's `evaluate` method).
+   - **Global wildcard**: `"messageType": "*"` matches all message types including data item requests.
+
+### Scenario Loader Validation
+
+The `ScenarioLoader` accepts any string in the `messageType` field of policy rules. The `data_item:<classification>` pattern is a naming convention enforced by the fabric layer's usage of the PDP — no additional schema validation is required. The PDP's `evaluate` method performs string comparison (exact or wildcard) regardless of the messageType format.
+
+### Default Behavior
+
+If no ICAM layer is configured in the scenario (i.e., `icamController` is empty), the data fabric applies a default **permit-all** policy for all `DATA_FETCH` and `DATA_QUERY` requests, with a warning logged once at runtime that data access control is unenforced.
+
 ## Requirements
 
-Requirements 17–24 (ICAM layer).
+Requirements 17–24 (ICAM layer), R36 (data item access control).
