@@ -198,6 +198,121 @@ classdef SecurityOracle < handle
                 obj.overRestrictionCount + obj.unspecifiedCount;
         end
 
+        function report = buildValidationReport(obj, realWorldOutcomes)
+            % buildValidationReport  Compare simulation outcomes to real-world data.
+            %
+            %   report = oracle.buildValidationReport(realWorldOutcomes)
+            %
+            %   realWorldOutcomes — struct array with fields:
+            %     eventId (or id)   — identifier matching simulation event
+            %     outcome           — 'permit' or 'deny'
+            %     role              — entity role (optional)
+            %     classification    — data classification (optional)
+            %     enclave           — enclave identifier (optional)
+            %     operation         — operation type (optional)
+            %
+            %   Compares each real-world outcome to the corresponding
+            %   simulation result. Computes:
+            %     ModelAccuracyScore = matched / total
+            %
+            %   Returns ValidationReport struct:
+            %     modelAccuracyScore — fraction of outcomes that match [0,1]
+            %     totalComparisons   — number of outcomes compared
+            %     matched            — number of matching outcomes
+            %     mismatched         — number of mismatching outcomes
+            %     unmatched          — number of real-world outcomes with no sim match
+            %     details            — struct array of per-comparison results
+            %
+            % Requirements: R50
+
+            if nargin < 2 || isempty(realWorldOutcomes)
+                report.modelAccuracyScore = 1.0;
+                report.totalComparisons = 0;
+                report.matched = 0;
+                report.mismatched = 0;
+                report.unmatched = 0;
+                report.details = struct('realWorldId', {}, ...
+                    'realWorldOutcome', {}, 'simulationOutcome', {}, ...
+                    'match', {});
+                return;
+            end
+
+            nReal = numel(realWorldOutcomes);
+            matchedCount = 0;
+            mismatchedCount = 0;
+            unmatchedCount = 0;
+            details = struct('realWorldId', {}, 'realWorldOutcome', {}, ...
+                'simulationOutcome', {}, 'match', {});
+
+            % Build lookup from simulation results by eventId
+            simResultMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for k = 1:numel(obj.results)
+                r = obj.results(k);
+                key = num2str(double(r.eventId));
+                simResultMap(key) = r;
+            end
+
+            for k = 1:nReal
+                rw = realWorldOutcomes(k);
+
+                % Get real-world event ID
+                rwId = '';
+                if isfield(rw, 'eventId')
+                    rwId = num2str(double(rw.eventId));
+                elseif isfield(rw, 'id')
+                    rwId = num2str(double(rw.id));
+                else
+                    rwId = num2str(k);
+                end
+
+                % Get real-world outcome
+                rwOutcome = '';
+                if isfield(rw, 'outcome')
+                    rwOutcome = lower(char(rw.outcome));
+                end
+
+                % Find matching simulation result
+                d.realWorldId = rwId;
+                d.realWorldOutcome = rwOutcome;
+
+                if simResultMap.isKey(rwId)
+                    simResult = simResultMap(rwId);
+                    % Determine simulation outcome from classification
+                    simOutcome = obj.classificationToOutcome(simResult.classification);
+                    d.simulationOutcome = simOutcome;
+
+                    if strcmp(rwOutcome, simOutcome)
+                        d.match = true;
+                        matchedCount = matchedCount + 1;
+                    else
+                        d.match = false;
+                        mismatchedCount = mismatchedCount + 1;
+                    end
+                else
+                    d.simulationOutcome = '';
+                    d.match = false;
+                    unmatchedCount = unmatchedCount + 1;
+                end
+
+                details(end+1) = d; %#ok<AGROW>
+            end
+
+            % Compute accuracy score
+            totalComparisons = matchedCount + mismatchedCount;
+            if totalComparisons > 0
+                modelAccuracyScore = matchedCount / totalComparisons;
+            else
+                modelAccuracyScore = 1.0;
+            end
+
+            report.modelAccuracyScore = modelAccuracyScore;
+            report.totalComparisons = totalComparisons;
+            report.matched = matchedCount;
+            report.mismatched = mismatchedCount;
+            report.unmatched = unmatchedCount;
+            report.details = details;
+        end
+
     end
 
     methods (Access = private)
@@ -251,6 +366,25 @@ classdef SecurityOracle < handle
                 val = logical(s.(fieldName));
             else
                 val = defaultVal;
+            end
+        end
+
+        function outcome = classificationToOutcome(~, classification)
+            % classificationToOutcome  Map evaluation classification to outcome.
+            %   conformant → maps to intended outcome (permit or deny)
+            %   violation → permit (since violation = permit when should deny)
+            %   over_restriction → deny (since over_restriction = deny when should permit)
+            %   unspecified → ''
+
+            switch classification
+                case 'conformant'
+                    outcome = 'permit'; % conformant means actual matched intended
+                case 'violation'
+                    outcome = 'permit'; % violation = actual was permit, intended was deny
+                case 'over_restriction'
+                    outcome = 'deny'; % over_restriction = actual was deny, intended was permit
+                otherwise
+                    outcome = '';
             end
         end
 
