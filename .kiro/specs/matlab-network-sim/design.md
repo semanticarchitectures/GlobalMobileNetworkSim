@@ -1228,8 +1228,6 @@ ICAM validation errors follow the same `netsim:component:errorType` convention a
 
 ## ICAM Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
-
 ### Property 20: Authentication Exchange Completeness
 
 *For any* pair of entities that have not previously communicated within a scenario run, the first message transmission attempt between them SHALL result in exactly one AUTH_REQUEST event and exactly one AUTH_RESPONSE event being scheduled in the EventCalendar before the original message is delivered, regardless of the message content or type.
@@ -1318,3 +1316,547 @@ Tag format: `% Feature: matlab-network-sim, Property N: <property_text>`
 
 - `icam.EntityRegistry` with 10,000 entities: verify construction completes without memory error (Requirement 17.5, 24.4)
 - `icam.ICAMController.initialize` on a scenario with no entities: verify no errors and empty ICAM report
+
+---
+
+## Data Archive Layer Design (Phase 9)
+
+### Overview
+
+The operational archive layer adds the `+data/` package. It is wired into `SimController` via an optional `dataFabricController` property (default `[]`). When present, it archives every simulation event to HDF5 during the run, registers each run in a persistent JSON catalog, and provides a cross-run query API. When absent, there is zero behavioral regression.
+
+### Architecture
+
+```
++data/
+  SimulationStore.m       — HDF5 read/write, schema versioning
+  SchemaVersion.m         — version constants, migration registry
+  RunRegistry.m           — JSON flat-file run catalog
+  EventArchiver.m         — buffered event sink, flush to SimulationStore
+  QueryEngine.m           — cross-run query, compare, aggregate, export
+  DataFabricController.m  — orchestrator: RunRegistry + EventArchiver + SimulationStore
+```
+
+### SimController Integration
+
+`SimController` gains a new optional property `sc.dataFabricController` (default `[]`):
+
+```matlab
+% At SimController.run() entry:
+if ~isempty(sc.dataFabricController)
+    sc.dataFabricController.onSimulationStart(sc);   % assign UUID, snapshot scenario
+end
+
+% At each DES event dispatch:
+if ~isempty(sc.dataFabricController)
+    sc.dataFabricController.archiveEvent(event);
+end
+
+% At simulation completion:
+if ~isempty(sc.dataFabricController)
+    sc.dataFabricController.onSimulationComplete(sc);  % flush, write RunRegistry record
+end
+```
+
+### HDF5 Archive Structure
+
+```
+/                             ← root group; schemaVersion attribute; README attribute
+  runs/
+    <uuid>/
+      events                  ← float64/int64 dataset, one row per event
+      stats                   ← JSON string dataset (Statistics_Report)
+      scenario                ← JSON string dataset (full scenario snapshot)
+      agent/                  ← group, present when agent layer active
+        traces                ← behavior trace dataset
+        evaluation            ← Evaluation_Report JSON
+      icam/                   ← group, present when ICAM layer active
+        report                ← ICAM report JSON
+```
+
+All numeric datasets use float64 or int64. All strings use HDF5 variable-length UTF-8 string datatype. No MATLAB-specific encoding.
+
+### Data Models
+
+**RunRegistry record:**
+```json
+{
+  "runId": "uuid-v4",
+  "scenarioName": "string",
+  "scenarioFilePath": "string",
+  "simStartTime": "ISO-8601",
+  "simEndTime": "ISO-8601",
+  "wallClockDurationSec": 12.4,
+  "nodeCount": 10,
+  "linkCount": 15,
+  "c2MessageCounts": { "scheduled": 1000, "delivered": 980, "failed": 20 },
+  "archiveStorePath": "/path/to/archive.h5",
+  "userMetadata": {}
+}
+```
+
+**QueryEngine interface:**
+```matlab
+% Cross-run queries
+tbl = data.QueryEngine.getEvents(runId, filters)
+tbl = data.QueryEngine.getStats(runIds)
+diff = data.QueryEngine.compareRuns(runId1, runId2)
+agg = data.QueryEngine.aggregateStats(runIds)
+scenario = data.QueryEngine.getScenario(runId)
+data.QueryEngine.exportRun(runId, outputDir, format)    % 'csv' | 'json'
+data.QueryEngine.exportBatch(runIds, outputDir, format)
+```
+
+**Error identifiers:**
+```
+netsim:data:unknownRunId          — runId not in store
+netsim:data:schemaMajorVersionMismatch — archive major version differs from current
+```
+
+### Correctness Properties (P27–P33)
+
+- **P27**: Schema read-back fidelity — write then read produces byte-for-byte identical data
+- **P28**: QueryEngine stats consistency — recomputed totals = stored values
+- **P29**: Export JSON validity — all exported JSON parseable by `jsondecode`
+- **P30**: RunRegistry list-filter correctness — `list(filters)` returns exactly the matching records
+- **P31**: Retention policy invariant — after `applyRetention()`, retained count ≤ maxRuns (when maxRuns > 0)
+- **P32**: Scenario lineage replay equivalence — `getScenario(runId)` → SimController produces same topology
+- **P33**: Cross-run aggregate correctness — `aggregateStats` values match hand-computed statistics
+
+### Error Handling
+
+| Condition | Identifier | Behavior |
+|---|---|---|
+| RunId not in store | `netsim:data:unknownRunId` | Throw with missing ID |
+| Major schema version mismatch | `netsim:data:schemaMajorVersionMismatch` | Throw with file path and both versions |
+| Missing/corrupted RunRegistry | — | Create new empty registry, log warning, do not halt |
+| Flush failure (disk full) | — | Log warning with events-lost count, continue simulation |
+
+---
+
+## Data Fabric Layer Design (Phase 10)
+
+### Overview
+
+The simulated data fabric layer adds the `+fabric/` package. It models DataItems (metadata-only — no actual payloads), DataStore nodes, data ingest/query/fetch as discrete C2 events, ICAM-enforced access control on data access, provenance graphs, and inter-DataStore replication. The fabric reuses the existing ICAM `PolicyEnforcementPoint` via the `messageType: 'data_item:<classification>'` convention — no changes to PDP logic are required.
+
+### Architecture
+
+```
++fabric/
+  DataItem.m              — DataItem struct and struct-of-arrays storage
+  DataCatalog.m           — per-DataStore catalog with O(1) lookup
+  ProvenanceGraph.m       — MATLAB digraph, getLineage()
+  DataStoreRegistry.m     — tracks DataStore nodes, holds catalogs
+  ReplicationEngine.m     — schedule DATA_REPLICATE messages per policy
+  FabricEventHandler.m    — handle DATA_INGEST, DATA_FETCH, DATA_QUERY, etc.
+  DataFabricController.m  — extends archive-mode controller; orchestrates fabric
+```
+
+### New Event Types
+
+| Type | Description | Key Payload Fields |
+|---|---|---|
+| `DATA_INGEST` | DataItem sent from creator to DataStore | `dataItemId`, `srcNodeId`, `dataStoreNodeId`, `sizeBytes` |
+| `DATA_INGEST_COMPLETE` | DataItem added to DataCatalog | `dataItemId`, `dataStoreNodeId`, `ingestLatencyMs` |
+| `DATA_INGEST_FAILED` | Delivery failure; retry scheduled | `dataItemId`, `reason`, `retryAtSec` |
+| `DATA_INGEST_DROPPED` | Max retries exceeded | `dataItemId` |
+| `DATA_QUERY` | Catalog search sent to DataStore | `queryId`, `srcEntityId`, `dataStoreNodeId`, `criteria` |
+| `DATA_QUERY_RESULT` | Filtered metadata returned | `queryId`, `matchCount`, `permittedItems` |
+| `DATA_FETCH` | Single-item retrieval request | `dataItemId`, `srcEntityId`, `dataStoreNodeId` |
+| `DATA_FETCH_RESULT` | DataItem metadata + provenance returned | `dataItemId`, `sizeBytes`, `provenance` |
+| `DATA_FETCH_DENIED` | ICAM deny or item not found | `dataItemId`, `reason` |
+| `DATA_REPLICATE` | DataItem copy sent to peer DataStore | `dataItemId`, `srcDataStoreId`, `dstDataStoreId`, `sizeBytes` |
+| `DATA_REPLICATED` | Successful peer ingest | `dataItemId`, `dstDataStoreId` |
+| `DATA_REPLICATION_FAILED` | Peer delivery failure | `dataItemId`, `dstDataStoreId` |
+| `DATA_REPLICATION_DROPPED` | Max replication retries exceeded | `dataItemId`, `dstDataStoreId` |
+| `DATA_ROUTING_ERROR` | DATA_INGEST/FETCH routed to non-DataStore | `targetNodeId` |
+
+### SimController Integration
+
+```matlab
+% At C2_MESSAGE_RX dispatch, after ICAM permit:
+if ~isempty(sc.dataFabricController)
+    sc.dataFabricController.onC2MessageDelivered(event, sc.simClock);
+end
+
+% In DES event dispatch switch:
+case 'DATA_INGEST'
+    sc.dataFabricController.handleIngest(event, sc.simClock)
+case 'DATA_FETCH'
+    sc.dataFabricController.handleFetch(event, sc.simClock)
+case 'DATA_QUERY'
+    sc.dataFabricController.handleQuery(event, sc.simClock)
+case 'DATA_REPLICATE'
+    sc.dataFabricController.handleReplicate(event, sc.simClock)
+```
+
+### Scenario JSON Extensions
+
+**DataStore node flags:**
+```json
+{
+  "id": "data-store-alpha",
+  "type": "Stationary",
+  "dataStore": true,
+  "dataStoreConfig": {
+    "replicationTargets": [
+      {"targetNodeId": "data-store-bravo", "policy": "all"},
+      {"targetNodeId": "data-store-charlie", "policy": "by_classification:SECRET"}
+    ],
+    "ingestRetryIntervalSec": 60,
+    "ingestMaxRetries": 5,
+    "replicationRetryIntervalSec": 120,
+    "replicationMaxRetries": 3
+  }
+}
+```
+
+**ICAM policy extension for data items (no PDP logic changes):**
+```json
+{"enclave": "enclave-alpha", "role": "pilot", "messageType": "data_item:UNCLASSIFIED", "decision": "permit"},
+{"enclave": "enclave-bravo", "role": "mission-commander", "messageType": "data_item:*", "decision": "permit"}
+```
+
+### Data Models
+
+**DataItem struct:**
+```matlab
+item.dataItemId        % string
+item.dataItemType      % 'sensor_telemetry'|'mission_report'|'c2_log'|'derived'
+item.creatorEntityId   % string
+item.creatorNodeId     % string
+item.creationTimeSec   % double
+item.sizeBytes         % double
+item.classification    % string (scenario-defined)
+item.enclaveId         % string
+item.provenance        % struct array of ProvenanceEntry
+```
+
+**ProvenanceEntry:**
+```matlab
+entry.sourceDataItemId   % string
+entry.sourceDataStoreId  % string
+entry.transformationType % string
+entry.transformTimeSec   % double
+```
+
+**dataFabric block in Statistics_Report:**
+```json
+{
+  "dataFabric": {
+    "totalDataItemsCreated": 5000,
+    "totalDataItemsIngested": 4900,
+    "totalIngestFailures": 80,
+    "totalIngestRetries": 160,
+    "totalDataQueryRequests": 200,
+    "totalDataFetchRequests": 800,
+    "totalDataFetchResults": 720,
+    "totalDataFetchDenied": 80,
+    "perDataStore": [
+      {
+        "nodeId": "data-store-alpha",
+        "catalogItemCount": 3200,
+        "ingestLatency": {"meanMs": 45.0, "medianMs": 38.0, "p95Ms": 120.0},
+        "replicatedOut": 1800,
+        "replicatedIn": 900,
+        "failedReplications": 12,
+        "meanReplicationLatencyMs": 88.0,
+        "perClassificationCounts": {"UNCLASSIFIED": 2100, "SECRET": 1100}
+      }
+    ],
+    "provenance": {
+      "totalNodes": 5000,
+      "totalEdges": 1200,
+      "maxDepth": 4,
+      "meanChainLength": 1.8
+    },
+    "accessDenied": {
+      "perEntity": {},
+      "perClassification": {}
+    }
+  }
+}
+```
+
+### Correctness Properties (P34–P40)
+
+- **P34**: DataItem ID uniqueness within run — no two DataItems share an ID in a single run
+- **P35**: Ingest-retry monotonicity — retry count for a DataItem never decreases
+- **P36**: Replication consistency — after DATA_REPLICATED, item present in peer DataCatalog
+- **P37**: ICAM wildcard soundness — `permit data_item:*` is a superset of `permit data_item:SECRET`
+- **P38**: Provenance depth bound — `getLineage(id, maxDepth)` returns depth ≤ maxDepth
+- **P39**: DataFabric stats consistency — report totals = sum of per-DataStore values
+- **P40**: Access-denied non-penalization — FidelityScore unchanged when fetch blocked by ICAM
+
+### Error Handling
+
+| Condition | Identifier | Behavior |
+|---|---|---|
+| DATA_INGEST/FETCH routed to non-DataStore | — | Record `data_routing_error`, discard message |
+| No ICAM layer configured | — | Permit all DATA_FETCH requests, log warning |
+| DATA_FETCH for unknown DataItem ID | — | Return DATA_FETCH_DENIED with reason `'item_not_found'` |
+| Ingest max retries exceeded | — | Record `data_ingest_dropped` event, DataItem not added to catalog |
+| Replication max retries exceeded | — | Record `data_replication_dropped` event, primary catalog unaffected |
+
+---
+
+## Security Evaluation Layer Design (Phase 11)
+
+### Overview
+
+The security evaluation layer adds the `+security/` package and extends `+io/` with `TrafficReplayLoader`. It transforms the simulation into a cybersecurity analysis tool operating in two modes:
+
+- **Verification mode**: notional topology + exhaustive coverage generation + adversarial agents → confirm implemented policy matches IntendedPolicy
+- **Validation mode**: real-world traffic replay + real topology import → confirm simulation predictions match observed outcomes (ModelAccuracyScore)
+
+The layer is wired into `SimController` via an optional `securityController` property (default `[]`). Zero behavioral regression when absent.
+
+### Architecture
+
+```
++security/
+  SecurityController.m         — orchestrator; hooks into SimController DES loop
+  IntendedPolicyLoader.m       — load/parse IntendedPolicy.json
+  PolicyAnalyzer.m             — static analysis: gaps, conflicts, dead rules, orphans
+  SecurityOracle.m             — dynamic evaluation: classify outcomes vs IntendedPolicy
+  CoverageGenerator.m          — enumerate and schedule exhaustive access attempts
+  AdversarialAgentRegistry.m   — load attack patterns, schedule attack events
+  NetworkDegradationTester.m   — degradation scenarios, DegradationSecurityMatrix
+  SecurityReportWriter.m       — write SecurityEvaluationReport JSON + summary CSV
+  ScenarioLibrary.m            — five parameterized security scenario templates
+
++io/
+  TrafficReplayLoader.m        — load real-world logs, generate replay Scenario
+```
+
+### SimController Integration
+
+```matlab
+% SimController gains optional property sc.securityController (default [])
+
+% At DES loop startup:
+if ~isempty(sc.securityController)
+    sc.securityController.onSimulationStart(sc.scenario, sc.simClock);
+end
+
+% At each event dispatch (after existing handlers):
+if ~isempty(sc.securityController)
+    sc.securityController.onEvent(event, sc.simClock);
+end
+
+% At simulation completion:
+if ~isempty(sc.securityController)
+    sc.securityController.onSimulationComplete(sc);
+end
+```
+
+### IntendedPolicy JSON Format
+
+```json
+{
+  "description": "Intended access control policy for Airdrop Mission",
+  "defaultOutcome": "deny",
+  "rules": [
+    {
+      "role": "pilot",
+      "classification": "UNCLASSIFIED",
+      "enclave": "enclave-alpha",
+      "operation": "read",
+      "outcome": "permit"
+    },
+    {
+      "role": "mission-commander",
+      "classification": "*",
+      "enclave": "*",
+      "operation": "*",
+      "outcome": "permit"
+    }
+  ]
+}
+```
+
+Wildcard `'*'` supported in all fields. More specific rules take precedence (specificity = number of non-wildcard fields; ties broken by rule order).
+
+### Adversarial Agent in Scenario JSON
+
+```json
+{
+  "id": "adversarial-insider",
+  "nodeId": "ops-center-nyc",
+  "adversarial": true,
+  "attackPatterns": [
+    {
+      "attackType": "unauthorized_data_access",
+      "targetClassification": "SECRET",
+      "targetEnclaveId": "enclave-bravo",
+      "operation": "read",
+      "attemptTimeSec": 1800
+    },
+    {
+      "attackType": "pdp_outage_exploitation",
+      "targetPdpNodeId": "pdp-node-alpha",
+      "outageDurationSec": 120,
+      "dataFetchAttemptOffsetSec": 30,
+      "targetClassification": "SECRET",
+      "attemptTimeSec": 3000
+    }
+  ]
+}
+```
+
+Supported `attackType` values: `'unauthorized_data_access'`, `'cross_enclave_access'`, `'expired_credential_access'`, `'pdp_outage_exploitation'`.
+
+### SecurityEvaluationReport Structure
+
+```json
+{
+  "runId": "uuid",
+  "scenarioName": "string",
+  "libraryTemplate": "insider_data_exfiltration | null",
+  "policyConformanceScore": 0.97,
+  "totalOutcomesEvaluated": 5000,
+  "conformantCount": 4850,
+  "violationCount": 50,
+  "overRestrictionCount": 75,
+  "unspecifiedCount": 25,
+  "violations": [
+    {
+      "entityId": "string",
+      "resourceId": "string",
+      "enclave": "string",
+      "operation": "string",
+      "actualOutcome": "permit",
+      "intendedOutcome": "deny",
+      "simTimeSec": 1800.0,
+      "adversarialSource": true
+    }
+  ],
+  "degradedConditionOutcomes": [
+    {
+      "entityId": "string",
+      "operation": "string",
+      "outcome": "permit",
+      "reason": "degraded_condition",
+      "degradedOnly": true,
+      "simTimeSec": 3030.0
+    }
+  ],
+  "coverage": {
+    "totalCombinations": 240,
+    "exercisedCombinations": 240,
+    "combinationsWithViolations": 12,
+    "combinationsUnspecified": 8,
+    "coveragePercentage": 100.0
+  },
+  "policyAnalysis": {
+    "gaps": [],
+    "conflicts": [],
+    "deadRules": [],
+    "orphanedRoles": [],
+    "intentMismatches": []
+  },
+  "degradationMatrix": {
+    "scenarios": ["pdp_outage_60s", "trust_anchor_outage_300s"],
+    "properties": ["PDP availability", "credential freshness", "replication consistency"],
+    "results": [[true, true, false], [true, false, true]]
+  },
+  "validation": {
+    "totalEventsReplayed": 10000,
+    "matchedCount": 9850,
+    "differedCount": 150,
+    "modelAccuracyScore": 0.985
+  }
+}
+```
+
+### PolicyAnalyzer Output (PolicyAnalysisReport)
+
+```json
+{
+  "gaps": [
+    {"role": "sensor", "classification": "SECRET", "enclave": "enclave-bravo", "operation": "write"}
+  ],
+  "conflicts": [
+    {"rule1": 3, "rule2": 7, "input": {"role": "pilot", "classification": "UNCLASSIFIED", "enclave": "enclave-alpha", "operation": "read"}}
+  ],
+  "deadRules": [{"ruleIndex": 9, "shadowedBy": 2}],
+  "orphanedRoles": [{"role": "observer", "entityCount": 3}],
+  "intentMismatches": [
+    {"role": "pilot", "classification": "SECRET", "enclave": "enclave-alpha", "operation": "read",
+     "implementedOutcome": "permit", "intendedOutcome": "deny"}
+  ]
+}
+```
+
+### ScenarioLibrary Templates
+
+Five parameterized templates shipped with the simulator:
+
+| Template Name | Models |
+|---|---|
+| `insider_data_exfiltration` | Entity with legitimate credentials attempts to access data above its classification |
+| `outsider_authentication_bypass` | External entity (no initial auth state) attempts to bypass authentication |
+| `pdp_outage_exploitation` | Adversary forces PDP outage then attempts access during fail-open window |
+| `cross_enclave_escalation` | Entity with role in Enclave A attempts to access resources in Enclave B |
+| `expired_credential_persistence` | Entity uses expired certificate after Trust Anchor outage prevents renewal |
+
+Usage:
+```matlab
+topology = struct('nodeIds', {...}, 'enclaveNames', {...}, 'roleNames', {...});
+scenario = security.ScenarioLibrary.instantiate('pdp_outage_exploitation', topology);
+sc = sim.SimController(scenario);
+```
+
+### TrafficReplayLoader
+
+```matlab
+% Load native CSV format (GlobalMobileNetworkSim event log)
+replayScenario = io.TrafficReplayLoader.load(logFilePath, 'native', entityNodeMap);
+
+% Load generic JSON format
+replayScenario = io.TrafficReplayLoader.load(logFilePath, 'generic', entityNodeMap);
+
+% Topology import mode
+replayScenario = io.TrafficReplayLoader.loadWithTopology(logFilePath, format, topoConfigPath);
+% Reads node positions, link types, latencies, outage params from topoConfigPath
+```
+
+Supported log event types: message transmission (`srcEntity`, `dstEntity`, `messageType`, `timestamp`, `sizeBytes`), authentication exchange (`initiatingEntity`, `targetEntity`, `timestamp`, `outcome`), data access attempt (`requestingEntity`, `resourceId`, `classification`, `operation`, `timestamp`, `observedOutcome`).
+
+When observed outcomes are present in the log, `TrafficReplayLoader` stores them as a `RealWorldOutcomes` struct and passes it to `SecurityOracle` to produce the `ValidationReport`.
+
+### Security Visualization Functions
+
+```matlab
+io.PlotFunctions.policyConformanceHeatmap(securityReport)
+% Heatmap: rows = entity roles, cols = data classifications, color = conformance rate
+
+io.PlotFunctions.attackSurfaceDiagram(securityReport)
+% Network topology: nodes colored by security role (normal/DataStore/PDP/TrustAnchor/adversarial)
+% Edges colored by whether any violation traversed them
+
+io.PlotFunctions.degradationSecurityPlot(securityReport)
+% DegradationSecurityMatrix as color grid: green = pass, red = fail
+% X-axis = security property, Y-axis = degradation scenario
+```
+
+### Correctness Properties (P41–P48)
+
+- **P41**: Oracle Violation Completeness — every event classified as permit when IntendedPolicy says deny appears in `violations` list
+- **P42**: PolicyConformanceScore Consistency — recomputing from report field counts equals stored score
+- **P43**: Policy Gap Detection Completeness — PolicyAnalyzer finds all (role, classification, enclave, operation) tuples with no explicit rule
+- **P44**: Policy Conflict Detection Completeness — PolicyAnalyzer finds all rule pairs producing conflicting outcomes for same input tuple
+- **P45**: Adversarial Containment Soundness — if every adversarial access attempt is denied, `violations` list contains no entries with `adversarialSource: true`
+- **P46**: Degradation Monotonicity — adding a degradation condition never decreases the violation count (edge case: role-change events during degradation may change access rights; document as known exception)
+- **P47**: Coverage Monotonicity — adding more entity/classification/enclave combinations to Scenario never decreases the total combinations enumerated by CoverageGenerator
+- **P48**: Replay Temporal Fidelity — all replayed events appear in simulation Event_Log at timestamps ≥ their original log timestamps
+
+### Error Handling
+
+| Condition | Identifier | Behavior |
+|---|---|---|
+| IntendedPolicy file missing or malformed | `netsim:security:policyLoadError` | Report file path, halt security evaluation setup |
+| ScenarioLibrary unknown template name | `netsim:security:unknownTemplate` | Report template name, throw |
+| TrafficReplayLoader unknown format | `netsim:security:unknownReplayFormat` | Report format string, throw |
+| CoverageGenerator combinatorial explosion | — | Cap at `maxCoverageCombinations` (configurable, default 10,000); log warning |

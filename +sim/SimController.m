@@ -43,6 +43,9 @@ classdef SimController < handle
         % ICAM layer (empty [] when scenario has no entities/policyDefinitionFile)
         icamController        % icam.ICAMController (or [])
 
+        % Data Fabric Controller (empty [] when not configured)
+        dataFabricController  % data.DataFabricController (or [])
+
         % Per-run evaluation results (struct array, populated at SIM_END)
         % Each element: agentId, role, fidelityScore, missingActions,
         %               extraActions, deviations
@@ -130,6 +133,9 @@ classdef SimController < handle
             % Initialise delivered latencies accumulator.
             sc.deliveredLatenciesMs = [];
 
+            % Initialise data fabric controller.
+            sc.dataFabricController = [];
+
             % Initialise agent-layer properties.
             sc.agentRegistry     = [];
             sc.fidelityEvaluator = [];
@@ -216,6 +222,11 @@ classdef SimController < handle
             end
             sc.runTimestamp = datestr(now, 'yyyy-mm-ddTHH:MM:SS'); %#ok<TNOW1,DATST>
 
+            % Notify DataFabricController of simulation start (if configured).
+            if ~isempty(sc.dataFabricController)
+                sc.dataFabricController.onSimulationStart(sc);
+            end
+
             % Schedule the simulation-end sentinel event.
             endEvent.time    = sc.scenario.simulationDurationSec;
             endEvent.type    = sim.EventCalendar.SIM_END;
@@ -267,6 +278,41 @@ classdef SimController < handle
 
                 % Dispatch to handler.
                 sc.dispatch(event);
+
+                % Archive event to DataFabricController (if configured).
+                if ~isempty(sc.dataFabricController)
+                    % Build a log-style event struct for archiving.
+                    archEvt.eventId    = double(event.id);
+                    archEvt.simTimeSec = event.time;
+                    archEvt.eventType  = char(event.type);
+                    archEvt.linkId     = '';
+                    archEvt.msgId      = '';
+                    archEvt.srcNodeId  = '';
+                    archEvt.dstNodeId  = '';
+                    archEvt.latencyMs  = NaN;
+                    archEvt.reason     = '';
+                    if isfield(event, 'payload')
+                        if isfield(event.payload, 'linkId')
+                            archEvt.linkId = char(event.payload.linkId);
+                        end
+                        if isfield(event.payload, 'msgId')
+                            archEvt.msgId = char(event.payload.msgId);
+                        end
+                        if isfield(event.payload, 'srcNodeId')
+                            archEvt.srcNodeId = char(event.payload.srcNodeId);
+                        end
+                        if isfield(event.payload, 'dstNodeId')
+                            archEvt.dstNodeId = char(event.payload.dstNodeId);
+                        end
+                        if isfield(event.payload, 'latencyMs')
+                            archEvt.latencyMs = double(event.payload.latencyMs);
+                        end
+                        if isfield(event.payload, 'reason')
+                            archEvt.reason = char(event.payload.reason);
+                        end
+                    end
+                    sc.dataFabricController.archiveEvent(archEvt);
+                end
 
                 % Honour pause flag: spin-wait until resumed or stopped.
                 while sc.isPaused && ~sc.isStopped
@@ -939,6 +985,11 @@ classdef SimController < handle
                     entry.deviations     = result.deviations;
                     sc.evalResults(end + 1) = entry;
                 end
+            end
+
+            % Notify DataFabricController of simulation completion (if configured).
+            if ~isempty(sc.dataFabricController)
+                sc.dataFabricController.onSimulationComplete(sc);
             end
 
             sc.isStopped = true;
