@@ -191,6 +191,12 @@ classdef DataFabricController < handle
 
             % Write stats report to the archive
             statsReport = sc.buildStatsReport();
+
+            % Include data fabric stats if fabric mode is active
+            if ~isempty(obj.fabricHandler)
+                statsReport.dataFabric = obj.buildFabricStats();
+            end
+
             obj.Store.writeStats(obj.runId, statsReport);
 
             % Build run record for the registry
@@ -473,6 +479,103 @@ classdef DataFabricController < handle
 
             % Delegate to FabricEventHandler.createC2LogItem
             payload = obj.fabricHandler.createC2LogItem(event, simTimeSec, obj.c2LogDataStoreId);
+        end
+
+        function fabricStats = buildFabricStats(obj)
+            % BUILDFABRICSTATS Build the dataFabric block for the Statistics_Report.
+            %
+            % Returns a struct with aggregate data fabric statistics across
+            % all DataStores. Only call when fabricHandler is not empty
+            % (i.e., ≥1 DataStore is configured).
+            %
+            % Returns:
+            %   fabricStats (struct): Struct with fields:
+            %       totalDataItems, ingest, fetch, query, replication,
+            %       perDataStore, provenanceGraph.
+            %
+            % Requirements: R41
+
+            % --- totalDataItems: sum across all DataStores ---
+            storeIds = obj.dataStoreRegistry.listDataStores();
+            totalItems = 0;
+            for i = 1:numel(storeIds)
+                catalog = obj.dataStoreRegistry.getCatalog(storeIds(i));
+                totalItems = totalItems + catalog.count();
+            end
+            fabricStats.totalDataItems = totalItems;
+
+            % --- ingest block ---
+            handlerStats = obj.fabricHandler.stats;
+            latencies = handlerStats.ingestLatencies;
+
+            if isempty(latencies)
+                meanLat = 0;
+                medianLat = 0;
+                p95Lat = 0;
+            else
+                meanLat = mean(latencies) * 1000;    % convert sec to ms
+                medianLat = median(latencies) * 1000;
+                p95Lat = prctile(latencies, 95) * 1000;
+            end
+
+            fabricStats.ingest = struct( ...
+                'totalIngested', handlerStats.totalIngested, ...
+                'totalFailed', handlerStats.totalFailed, ...
+                'totalRetries', handlerStats.totalRetries, ...
+                'totalDropped', handlerStats.totalDropped, ...
+                'meanLatencyMs', meanLat, ...
+                'medianLatencyMs', medianLat, ...
+                'p95LatencyMs', p95Lat);
+
+            % --- fetch block ---
+            fabricStats.fetch = struct( ...
+                'totalRequests', handlerStats.totalFetchRequests, ...
+                'totalResults', handlerStats.totalFetchResults, ...
+                'totalDenied', handlerStats.totalFetchDenied, ...
+                'totalItemNotFound', handlerStats.totalItemNotFound);
+
+            % --- query block ---
+            fabricStats.query = struct( ...
+                'totalRequests', handlerStats.totalQueryRequests, ...
+                'totalResults', handlerStats.totalQueryResults);
+
+            % --- replication block ---
+            replStats = obj.replicationEngine.stats;
+            fabricStats.replication = struct( ...
+                'totalReplicated', replStats.totalReplicated, ...
+                'totalReplicationFailed', replStats.totalReplicationFailed);
+
+            % --- perDataStore block ---
+            nStores = numel(storeIds);
+            if nStores == 0
+                fabricStats.perDataStore = struct( ...
+                    'nodeId', {}, 'itemCount', {}, 'catalogSize', {});
+            else
+                perStore = struct( ...
+                    'nodeId', cell(1, nStores), ...
+                    'itemCount', cell(1, nStores), ...
+                    'catalogSize', cell(1, nStores));
+                for i = 1:nStores
+                    catalog = obj.dataStoreRegistry.getCatalog(storeIds(i));
+                    itemCount = catalog.count();
+                    perStore(i).nodeId = char(storeIds(i));
+                    perStore(i).itemCount = itemCount;
+                    perStore(i).catalogSize = itemCount;
+                end
+                fabricStats.perDataStore = perStore;
+            end
+
+            % --- provenanceGraph block ---
+            totalNodes = 0;
+            totalEdges = 0;
+            for i = 1:numel(storeIds)
+                pg = obj.dataStoreRegistry.getProvenanceGraph(storeIds(i));
+                totalNodes = totalNodes + pg.nodeCount();
+                totalEdges = totalEdges + pg.edgeCount();
+            end
+            fabricStats.provenanceGraph = struct( ...
+                'totalNodes', totalNodes, ...
+                'totalEdges', totalEdges);
         end
     end
 
