@@ -43,6 +43,9 @@ classdef SimController < handle
         % ICAM layer (empty [] when scenario has no entities/policyDefinitionFile)
         icamController        % icam.ICAMController (or [])
 
+        % Data Fabric Controller (empty [] when not configured)
+        dataFabricController  % data.DataFabricController (or [])
+
         % Per-run evaluation results (struct array, populated at SIM_END)
         % Each element: agentId, role, fidelityScore, missingActions,
         %               extraActions, deviations
@@ -51,6 +54,9 @@ classdef SimController < handle
         % Run identification (set at run() start)
         runId           % string UUID for this run
         runTimestamp    % ISO-8601 timestamp string for this run
+
+        % Position update interval for NODE_POSITION events (seconds; 0 = disabled)
+        positionUpdateIntervalSec  % double (default 0)
 
         % Accumulated latencies of delivered C2 messages (for statistics)
         deliveredLatenciesMs  % double array
@@ -121,8 +127,14 @@ classdef SimController < handle
                 'bgRefreshCount',     uint64(0), ...
                 'agentIdleCheckCount',uint64(0));
 
+            % Position update interval (default 0 = disabled).
+            sc.positionUpdateIntervalSec = 0;
+
             % Initialise delivered latencies accumulator.
             sc.deliveredLatenciesMs = [];
+
+            % Initialise data fabric controller.
+            sc.dataFabricController = [];
 
             % Initialise agent-layer properties.
             sc.agentRegistry     = [];
@@ -210,6 +222,11 @@ classdef SimController < handle
             end
             sc.runTimestamp = datestr(now, 'yyyy-mm-ddTHH:MM:SS'); %#ok<TNOW1,DATST>
 
+            % Notify DataFabricController of simulation start (if configured).
+            if ~isempty(sc.dataFabricController)
+                sc.dataFabricController.onSimulationStart(sc);
+            end
+
             % Schedule the simulation-end sentinel event.
             endEvent.time    = sc.scenario.simulationDurationSec;
             endEvent.type    = sim.EventCalendar.SIM_END;
@@ -223,6 +240,11 @@ classdef SimController < handle
             end
             if ~isempty(sc.bgTrafficModel)
                 sc.bgTrafficModel.scheduleAllInitialRefreshes(0);
+            end
+
+            % Schedule NODE_POSITION events if interval is configured.
+            if sc.positionUpdateIntervalSec > 0 && ~isempty(sc.nodeRegistry)
+                sc.scheduleNextPositionUpdate(0);
             end
 
             % Schedule all C2 messages from scenario if present.
@@ -256,6 +278,41 @@ classdef SimController < handle
 
                 % Dispatch to handler.
                 sc.dispatch(event);
+
+                % Archive event to DataFabricController (if configured).
+                if ~isempty(sc.dataFabricController)
+                    % Build a log-style event struct for archiving.
+                    archEvt.eventId    = double(event.id);
+                    archEvt.simTimeSec = event.time;
+                    archEvt.eventType  = char(event.type);
+                    archEvt.linkId     = '';
+                    archEvt.msgId      = '';
+                    archEvt.srcNodeId  = '';
+                    archEvt.dstNodeId  = '';
+                    archEvt.latencyMs  = NaN;
+                    archEvt.reason     = '';
+                    if isfield(event, 'payload')
+                        if isfield(event.payload, 'linkId')
+                            archEvt.linkId = char(event.payload.linkId);
+                        end
+                        if isfield(event.payload, 'msgId')
+                            archEvt.msgId = char(event.payload.msgId);
+                        end
+                        if isfield(event.payload, 'srcNodeId')
+                            archEvt.srcNodeId = char(event.payload.srcNodeId);
+                        end
+                        if isfield(event.payload, 'dstNodeId')
+                            archEvt.dstNodeId = char(event.payload.dstNodeId);
+                        end
+                        if isfield(event.payload, 'latencyMs')
+                            archEvt.latencyMs = double(event.payload.latencyMs);
+                        end
+                        if isfield(event.payload, 'reason')
+                            archEvt.reason = char(event.payload.reason);
+                        end
+                    end
+                    sc.dataFabricController.archiveEvent(archEvt);
+                end
 
                 % Honour pause flag: spin-wait until resumed or stopped.
                 while sc.isPaused && ~sc.isStopped
@@ -565,6 +622,9 @@ classdef SimController < handle
                 case sim.EventCalendar.BACKGROUND_REFRESH
                     sc.handleBackgroundRefresh(event);
 
+                case sim.EventCalendar.NODE_POSITION
+                    sc.handleNodePosition(event);
+
                 case sim.EventCalendar.AGENT_IDLE_CHECK
                     sc.handleAgentIdleCheck(event);
 
@@ -852,7 +912,8 @@ classdef SimController < handle
                 sc.linkStats(lkIdChar) = entry;
             end
 
-            sc.appendLog(event, linkId, '', '', '', NaN, '');
+            % Background refresh is not logged to the event log to reduce noise.
+            % The resample still happens internally and affects link bandwidth.
         end
 
         function handleAgentIdleCheck(sc, event)
@@ -926,6 +987,11 @@ classdef SimController < handle
                 end
             end
 
+            % Notify DataFabricController of simulation completion (if configured).
+            if ~isempty(sc.dataFabricController)
+                sc.dataFabricController.onSimulationComplete(sc);
+            end
+
             sc.isStopped = true;
         end
 
@@ -958,6 +1024,51 @@ classdef SimController < handle
                     end
                 end
             end
+        end
+
+        % --- NODE_POSITION handler ------------------------------------------
+
+        function handleNodePosition(sc, event)
+            % handleNodePosition  Record positions of all mobile nodes and
+            % schedule the next NODE_POSITION event.
+            if isempty(sc.nodeRegistry)
+                return;
+            end
+            % Record one log entry per mobile node
+            nNodes = sc.nodeRegistry.count();
+            for k = 1:nNodes
+                nid = sc.nodeRegistry.getIdByIndex(k);
+                pos = sc.nodeRegistry.getPosition(nid, sc.simTimeSec);
+                posEntry.eventId    = sc.nextId();
+                posEntry.simTimeSec = sc.simTimeSec;
+                posEntry.eventType  = sim.EventCalendar.NODE_POSITION;
+                posEntry.linkId     = char(nid);
+                posEntry.msgId      = sprintf('%.4f', pos.lat);
+                posEntry.srcNodeId  = sprintf('%.4f', pos.lon);
+                posEntry.dstNodeId  = sprintf('%.1f', pos.altM);
+                posEntry.latencyMs  = NaN;
+                posEntry.reason     = '';
+                if isempty(sc.eventLog)
+                    sc.eventLog = posEntry;
+                else
+                    sc.eventLog(end+1) = posEntry;
+                end
+            end
+            % Schedule next position update
+            sc.scheduleNextPositionUpdate(sc.simTimeSec);
+        end
+
+        function scheduleNextPositionUpdate(sc, currentTimeSec)
+            % scheduleNextPositionUpdate  Schedule the next NODE_POSITION event.
+            nextTime = currentTimeSec + sc.positionUpdateIntervalSec;
+            if nextTime >= sc.scenario.simulationDurationSec
+                return;
+            end
+            ev.time    = nextTime;
+            ev.type    = sim.EventCalendar.NODE_POSITION;
+            ev.id      = sc.nextId();
+            ev.payload = struct();
+            sc.eventCalendar.schedule(ev);
         end
 
         % --- LOS link update (Task 8.2) -------------------------------------

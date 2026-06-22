@@ -24,6 +24,8 @@ classdef EventCalendar < handle
         BACKGROUND_REFRESH      = "BACKGROUND_REFRESH"
         AGENT_IDLE_CHECK        = "AGENT_IDLE_CHECK"
         SIM_END                 = "SIM_END"
+        % Position tracking
+        NODE_POSITION           = "NODE_POSITION"
         % ICAM authentication event types
         AUTH_REQUEST            = "AUTH_REQUEST"
         AUTH_RESPONSE           = "AUTH_RESPONSE"
@@ -32,6 +34,14 @@ classdef EventCalendar < handle
         CERT_RENEWAL_REQUEST    = "CERT_RENEWAL_REQUEST"
         CERT_RENEWAL_RESPONSE   = "CERT_RENEWAL_RESPONSE"
         POLICY_SYNC             = "POLICY_SYNC"
+        % Data fabric event types
+        DATA_INGEST             = "DATA_INGEST"
+        DATA_FETCH              = "DATA_FETCH"
+        DATA_QUERY              = "DATA_QUERY"
+        DATA_REPLICATE          = "DATA_REPLICATE"
+        DATA_FETCH_RESULT       = "DATA_FETCH_RESULT"
+        DATA_FETCH_DENIED       = "DATA_FETCH_DENIED"
+        DATA_QUERY_RESULT       = "DATA_QUERY_RESULT"
     end
 
     % -----------------------------------------------------------------

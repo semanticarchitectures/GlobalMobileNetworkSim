@@ -1,0 +1,3546 @@
+{
+  "scenarioName": "DragonCartSwarm_ImprovedRelay",
+  "simulationDurationSec": 7200,
+  "nodes": [
+    {
+      "id": "C130",
+      "type": "Mobile",
+      "lat": 41.66,
+      "lon": -70.52,
+      "altM": 0,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 0,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          },
+          {
+            "timeSec": 300,
+            "lat": 41.7,
+            "lon": -70,
+            "altM": 7500
+          },
+          {
+            "timeSec": 1800,
+            "lat": 41.8,
+            "lon": -66,
+            "altM": 7500
+          },
+          {
+            "timeSec": 2700,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3600,
+            "lat": 41.8,
+            "lon": -66,
+            "altM": 7500
+          },
+          {
+            "timeSec": 5400,
+            "lat": 41.7,
+            "lon": -70,
+            "altM": 3000
+          },
+          {
+            "timeSec": 6000,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "GCC",
+      "type": "Stationary",
+      "lat": 41.66,
+      "lon": -70.52,
+      "altM": 10,
+      "keplerElements": [],
+      "trajectory": []
+    },
+    {
+      "id": "LEO_SAT_1",
+      "type": "Mobile",
+      "lat": 0,
+      "lon": 0,
+      "altM": 550000,
+      "keplerElements": {
+        "semiMajorAxisM": 6.928E+6,
+        "eccentricity": 0.0001,
+        "inclinationDeg": 53,
+        "raanDeg": 30,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 60,
+        "epochSec": 0
+      },
+      "trajectory": []
+    },
+    {
+      "id": "LEO_SAT_2",
+      "type": "Mobile",
+      "lat": 0,
+      "lon": 0,
+      "altM": 550000,
+      "keplerElements": {
+        "semiMajorAxisM": 6.928E+6,
+        "eccentricity": 0.0001,
+        "inclinationDeg": 53,
+        "raanDeg": 120,
+        "argPeriapsisDeg": 0,
+        "trueAnomalyDeg": 240,
+        "epochSec": 0
+      },
+      "trajectory": []
+    },
+    {
+      "id": "ISR_1",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2700,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3000,
+            "lat": 42.2,
+            "lon": -61.5,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 42.5,
+            "lon": -61,
+            "altM": 3000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.5,
+            "lon": -61,
+            "altM": 3000
+          }
+        ]
+      }
+    },
+    {
+      "id": "ISR_2",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2700,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3000,
+            "lat": 41.599999999999994,
+            "lon": -61.5,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 41.3,
+            "lon": -61,
+            "altM": 3000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.3,
+            "lon": -61,
+            "altM": 3000
+          }
+        ]
+      }
+    },
+    {
+      "id": "ISR_3",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2700,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3000,
+            "lat": 42.3,
+            "lon": -62.5,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 42.7,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.7,
+            "lon": -63,
+            "altM": 3000
+          }
+        ]
+      }
+    },
+    {
+      "id": "ISR_4",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2700,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3000,
+            "lat": 41.5,
+            "lon": -62.5,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 41.1,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.1,
+            "lon": -63,
+            "altM": 3000
+          }
+        ]
+      }
+    },
+    {
+      "id": "RELAY_1",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 5000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2760,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3060,
+            "lat": 42,
+            "lon": -62,
+            "altM": 9000
+          },
+          {
+            "timeSec": 3600,
+            "lat": 42.1,
+            "lon": -60.5,
+            "altM": 9000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 42.1,
+            "lon": -60.5,
+            "altM": 9000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.1,
+            "lon": -60.5,
+            "altM": 9000
+          }
+        ]
+      }
+    },
+    {
+      "id": "RELAY_2",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 5000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2760,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3060,
+            "lat": 42,
+            "lon": -62,
+            "altM": 9000
+          },
+          {
+            "timeSec": 3600,
+            "lat": 41.6,
+            "lon": -60.5,
+            "altM": 9000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 41.6,
+            "lon": -60.5,
+            "altM": 9000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.6,
+            "lon": -60.5,
+            "altM": 9000
+          }
+        ]
+      }
+    },
+    {
+      "id": "RELAY_3",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 5000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2760,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3060,
+            "lat": 42,
+            "lon": -62,
+            "altM": 9000
+          },
+          {
+            "timeSec": 3600,
+            "lat": 42.4,
+            "lon": -60,
+            "altM": 9000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 42.4,
+            "lon": -60,
+            "altM": 9000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.4,
+            "lon": -60,
+            "altM": 9000
+          }
+        ]
+      }
+    },
+    {
+      "id": "RELAY_4",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 5000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2760,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3060,
+            "lat": 42,
+            "lon": -62,
+            "altM": 9000
+          },
+          {
+            "timeSec": 3600,
+            "lat": 41.4,
+            "lon": -60,
+            "altM": 9000
+          },
+          {
+            "timeSec": 4200,
+            "lat": 41.4,
+            "lon": -60,
+            "altM": 9000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.4,
+            "lon": -60,
+            "altM": 9000
+          }
+        ]
+      }
+    },
+    {
+      "id": "STRIKE_1",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 500,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2820,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3120,
+            "lat": 42,
+            "lon": -60.75,
+            "altM": 500
+          },
+          {
+            "timeSec": 3600,
+            "lat": 42.1,
+            "lon": -59.5,
+            "altM": 300
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.1,
+            "lon": -59.5,
+            "altM": 300
+          }
+        ]
+      }
+    },
+    {
+      "id": "STRIKE_2",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 500,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2820,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3120,
+            "lat": 41.75,
+            "lon": -60.75,
+            "altM": 500
+          },
+          {
+            "timeSec": 3600,
+            "lat": 41.6,
+            "lon": -59.5,
+            "altM": 300
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.6,
+            "lon": -59.5,
+            "altM": 300
+          }
+        ]
+      }
+    },
+    {
+      "id": "STRIKE_3",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 500,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2820,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3120,
+            "lat": 42.15,
+            "lon": -60.5,
+            "altM": 500
+          },
+          {
+            "timeSec": 3600,
+            "lat": 42.4,
+            "lon": -59,
+            "altM": 300
+          },
+          {
+            "timeSec": 7200,
+            "lat": 42.4,
+            "lon": -59,
+            "altM": 300
+          }
+        ]
+      }
+    },
+    {
+      "id": "STRIKE_4",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 500,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2820,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3120,
+            "lat": 41.65,
+            "lon": -60.5,
+            "altM": 500
+          },
+          {
+            "timeSec": 3600,
+            "lat": 41.4,
+            "lon": -59,
+            "altM": 300
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.4,
+            "lon": -59,
+            "altM": 300
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECOV_1",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2880,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3180,
+            "lat": 41.85,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4500,
+            "lat": 41.8,
+            "lon": -65,
+            "altM": 3000
+          },
+          {
+            "timeSec": 5400,
+            "lat": 41.75,
+            "lon": -67,
+            "altM": 3000
+          },
+          {
+            "timeSec": 6000,
+            "lat": 41.7,
+            "lon": -69.5,
+            "altM": 1000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECOV_2",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2880,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3180,
+            "lat": 41.9,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4500,
+            "lat": 41.849999999999994,
+            "lon": -65,
+            "altM": 3000
+          },
+          {
+            "timeSec": 5400,
+            "lat": 41.8,
+            "lon": -67,
+            "altM": 3000
+          },
+          {
+            "timeSec": 6000,
+            "lat": 41.75,
+            "lon": -69.5,
+            "altM": 1000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECOV_3",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2880,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3180,
+            "lat": 41.800000000000004,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4500,
+            "lat": 41.75,
+            "lon": -65,
+            "altM": 3000
+          },
+          {
+            "timeSec": 5400,
+            "lat": 41.7,
+            "lon": -67,
+            "altM": 3000
+          },
+          {
+            "timeSec": 6000,
+            "lat": 41.650000000000006,
+            "lon": -69.5,
+            "altM": 1000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "RECOV_4",
+      "type": "Mobile",
+      "lat": 41.9,
+      "lon": -62,
+      "altM": 3000,
+      "keplerElements": [],
+      "trajectory": {
+        "type": "waypoints",
+        "waypoints": [
+          {
+            "timeSec": 2880,
+            "lat": 41.9,
+            "lon": -62,
+            "altM": 6000
+          },
+          {
+            "timeSec": 3180,
+            "lat": 41.95,
+            "lon": -63,
+            "altM": 3000
+          },
+          {
+            "timeSec": 4500,
+            "lat": 41.9,
+            "lon": -65,
+            "altM": 3000
+          },
+          {
+            "timeSec": 5400,
+            "lat": 41.85,
+            "lon": -67,
+            "altM": 3000
+          },
+          {
+            "timeSec": 6000,
+            "lat": 41.800000000000004,
+            "lon": -69.5,
+            "altM": 1000
+          },
+          {
+            "timeSec": 7200,
+            "lat": 41.66,
+            "lon": -70.52,
+            "altM": 0
+          }
+        ]
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "C130_GCC",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 500000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GCC_C130",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GCC",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 500000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "C130_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "C130",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 30,
+      "bandwidthBps": 2.0E+6,
+      "outageRate": 0.003,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "LEO1_C130",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 30,
+      "bandwidthBps": 2.0E+6,
+      "outageRate": 0.003,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "C130_LEO2",
+      "type": "LEO_Satellite",
+      "srcNodeId": "C130",
+      "dstNodeId": "LEO_SAT_2",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 2.0E+6,
+      "outageRate": 0.003,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "LEO2_C130",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_2",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 2.0E+6,
+      "outageRate": 0.003,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 50
+    },
+    {
+      "id": "GCC_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "GCC",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 28,
+      "bandwidthBps": 5.0E+7,
+      "outageRate": 0.002,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0.1,
+        "max": 0.3
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
+    {
+      "id": "LEO1_GCC",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 28,
+      "bandwidthBps": 5.0E+7,
+      "outageRate": 0.002,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0.1,
+        "max": 0.3
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
+    {
+      "id": "GCC_LEO2",
+      "type": "LEO_Satellite",
+      "srcNodeId": "GCC",
+      "dstNodeId": "LEO_SAT_2",
+      "nominalLatencyMs": 32,
+      "bandwidthBps": 5.0E+7,
+      "outageRate": 0.002,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0.1,
+        "max": 0.3
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
+    {
+      "id": "LEO2_GCC",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_2",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 32,
+      "bandwidthBps": 5.0E+7,
+      "outageRate": 0.002,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0.1,
+        "max": 0.3
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 30
+    },
+    {
+      "id": "RELAY_1_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "LEO1_RELAY_1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "C130_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "C130",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_C130",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "LEO1_RELAY_2",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "C130_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "C130",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_C130",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "LEO1_RELAY_3",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "C130_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "C130",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_C130",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_LEO1",
+      "type": "LEO_Satellite",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "LEO_SAT_1",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "LEO1_RELAY_4",
+      "type": "LEO_Satellite",
+      "srcNodeId": "LEO_SAT_1",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 35,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0.005,
+      "outageDuration": {
+        "distribution": "exponential",
+        "mean": 30
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 80
+    },
+    {
+      "id": "C130_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "C130",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_C130",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "C130",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1.0E+6,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_1_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_1",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_ISR_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "ISR_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_1_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_1",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_ISR_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "ISR_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_1_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_1",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_ISR_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "ISR_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_1_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_1",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_ISR_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "ISR_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_2_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_2",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_ISR_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "ISR_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_2_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_2",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_ISR_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "ISR_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_2_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_2",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_ISR_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "ISR_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_2_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_2",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_ISR_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "ISR_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_3_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_3",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_ISR_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "ISR_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_3_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_3",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_ISR_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "ISR_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_3_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_3",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_ISR_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "ISR_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_3_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_3",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_ISR_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "ISR_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_4_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_4",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_ISR_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "ISR_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_4_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_4",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_ISR_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "ISR_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_4_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_4",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_ISR_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "ISR_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "ISR_4_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "ISR_4",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_ISR_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "ISR_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_1_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_1",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_STRIKE_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "STRIKE_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_1_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_1",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_STRIKE_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "STRIKE_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_1_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_1",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_STRIKE_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "STRIKE_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_1_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_1",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_STRIKE_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "STRIKE_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_2_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_2",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_STRIKE_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "STRIKE_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_2_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_2",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_STRIKE_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "STRIKE_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_2_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_2",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_STRIKE_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "STRIKE_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_2_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_2",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_STRIKE_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "STRIKE_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_3_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_3",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_STRIKE_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "STRIKE_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_3_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_3",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_STRIKE_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "STRIKE_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_3_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_3",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_STRIKE_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "STRIKE_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_3_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_3",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_STRIKE_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "STRIKE_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_4_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_4",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_STRIKE_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "STRIKE_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_4_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_4",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_STRIKE_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "STRIKE_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_4_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_4",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_STRIKE_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "STRIKE_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "STRIKE_4_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "STRIKE_4",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_STRIKE_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "STRIKE_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 200000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_1_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_RECOV_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "RECOV_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_1_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_RECOV_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "RECOV_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_1_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_RECOV_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "RECOV_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_1_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_RECOV_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "RECOV_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_2_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_RECOV_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "RECOV_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_2_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_RECOV_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "RECOV_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_2_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_RECOV_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "RECOV_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_2_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_RECOV_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "RECOV_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_3_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_RECOV_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "RECOV_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_3_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_RECOV_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "RECOV_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_3_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_RECOV_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "RECOV_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_3_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_RECOV_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "RECOV_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_4_RELAY_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "RELAY_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_1_RECOV_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_1",
+      "dstNodeId": "RECOV_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_4_RELAY_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "RELAY_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_2_RECOV_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_2",
+      "dstNodeId": "RECOV_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_4_RELAY_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "RELAY_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_3_RECOV_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_3",
+      "dstNodeId": "RECOV_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_4_RELAY_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "RELAY_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RELAY_4_RECOV_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RELAY_4",
+      "dstNodeId": "RECOV_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 350000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_1_GCC",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GCC_RECOV_1",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GCC",
+      "dstNodeId": "RECOV_1",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_2_GCC",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GCC_RECOV_2",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GCC",
+      "dstNodeId": "RECOV_2",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_3_GCC",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GCC_RECOV_3",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GCC",
+      "dstNodeId": "RECOV_3",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "RECOV_4_GCC",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "GCC",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    },
+    {
+      "id": "GCC_RECOV_4",
+      "type": "Line_Of_Sight",
+      "srcNodeId": "GCC",
+      "dstNodeId": "RECOV_4",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 500000,
+      "outageRate": 0,
+      "outageDuration": {
+        "distribution": "fixed",
+        "value": 10
+      },
+      "backgroundTraffic": {
+        "distribution": "uniform",
+        "min": 0,
+        "max": 0.1
+      },
+      "coverageRadiusM": 400000,
+      "congestionPenaltyMs": 0
+    }
+  ],
+  "c2Messages": [
+    {
+      "id": "m01",
+      "srcNodeId": "GCC",
+      "dstNodeId": "C130",
+      "sizeBytes": 2048,
+      "scheduledTimeSec": 600
+    },
+    {
+      "id": "m02",
+      "srcNodeId": "GCC",
+      "dstNodeId": "C130",
+      "sizeBytes": 4096,
+      "scheduledTimeSec": 1800
+    },
+    {
+      "id": "m03",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 2700
+    },
+    {
+      "id": "m04",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 2760
+    },
+    {
+      "id": "m05",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 2820
+    },
+    {
+      "id": "m06",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 2880
+    },
+    {
+      "id": "m07",
+      "srcNodeId": "ISR_1",
+      "dstNodeId": "GCC",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 3600
+    },
+    {
+      "id": "m08",
+      "srcNodeId": "ISR_2",
+      "dstNodeId": "GCC",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 3600
+    },
+    {
+      "id": "m09",
+      "srcNodeId": "ISR_3",
+      "dstNodeId": "GCC",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 3600
+    },
+    {
+      "id": "m10",
+      "srcNodeId": "ISR_4",
+      "dstNodeId": "GCC",
+      "sizeBytes": 512,
+      "scheduledTimeSec": 3600
+    },
+    {
+      "id": "m11",
+      "srcNodeId": "GCC",
+      "dstNodeId": "STRIKE_1",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 3000
+    },
+    {
+      "id": "m12",
+      "srcNodeId": "GCC",
+      "dstNodeId": "STRIKE_2",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 3000
+    },
+    {
+      "id": "m13",
+      "srcNodeId": "GCC",
+      "dstNodeId": "STRIKE_3",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 3000
+    },
+    {
+      "id": "m14",
+      "srcNodeId": "GCC",
+      "dstNodeId": "STRIKE_4",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 3000
+    },
+    {
+      "id": "m15",
+      "srcNodeId": "STRIKE_1",
+      "dstNodeId": "GCC",
+      "sizeBytes": 1024,
+      "scheduledTimeSec": 3700
+    },
+    {
+      "id": "m16",
+      "srcNodeId": "STRIKE_2",
+      "dstNodeId": "GCC",
+      "sizeBytes": 1024,
+      "scheduledTimeSec": 3700
+    },
+    {
+      "id": "m17",
+      "srcNodeId": "STRIKE_3",
+      "dstNodeId": "GCC",
+      "sizeBytes": 1024,
+      "scheduledTimeSec": 3700
+    },
+    {
+      "id": "m18",
+      "srcNodeId": "STRIKE_4",
+      "dstNodeId": "GCC",
+      "sizeBytes": 1024,
+      "scheduledTimeSec": 3700
+    },
+    {
+      "id": "m19",
+      "srcNodeId": "RECOV_1",
+      "dstNodeId": "GCC",
+      "sizeBytes": 8192,
+      "scheduledTimeSec": 5400
+    },
+    {
+      "id": "m20",
+      "srcNodeId": "RECOV_2",
+      "dstNodeId": "GCC",
+      "sizeBytes": 8192,
+      "scheduledTimeSec": 5400
+    },
+    {
+      "id": "m21",
+      "srcNodeId": "RECOV_3",
+      "dstNodeId": "GCC",
+      "sizeBytes": 8192,
+      "scheduledTimeSec": 5400
+    },
+    {
+      "id": "m22",
+      "srcNodeId": "RECOV_4",
+      "dstNodeId": "GCC",
+      "sizeBytes": 8192,
+      "scheduledTimeSec": 5400
+    },
+    {
+      "id": "m23",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 4500
+    },
+    {
+      "id": "m24",
+      "srcNodeId": "C130",
+      "dstNodeId": "GCC",
+      "sizeBytes": 256,
+      "scheduledTimeSec": 5800
+    }
+  ]
+}

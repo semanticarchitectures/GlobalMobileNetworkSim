@@ -640,6 +640,259 @@ classdef PlotFunctions
             hold(ax, 'off');
         end
 
+        % ------------------------------------------------------------------
+
+        function fig = policyConformanceHeatmap(securityReport)
+            % policyConformanceHeatmap  Heatmap of role x classification conformance.
+            %
+            %   fig = io.PlotFunctions.policyConformanceHeatmap(securityReport)
+            %
+            %   securityReport — SecurityEvaluationReport struct with
+            %                    policyAnalysis and violations fields.
+            %
+            %   Creates a heatmap figure with roles on the y-axis and
+            %   data classifications on the x-axis, colored by conformance rate.
+            %
+            %   Returns the figure handle.
+            %
+            % Requirements: R43, R44
+
+            fig = figure('Visible', 'off');
+            ax = axes(fig); %#ok<LAXES>
+
+            % Extract roles and classifications from policy analysis
+            roles = {'analyst', 'operator', 'admin'};
+            classifications = {'UNCLASSIFIED', 'SECRET', 'TOP_SECRET'};
+
+            if isfield(securityReport, 'policyAnalysis') && ...
+                    isfield(securityReport.policyAnalysis, 'gaps')
+                gaps = securityReport.policyAnalysis.gaps;
+                % Extract unique roles and classifications from gaps
+                if ~isempty(gaps)
+                    gapRoles = {};
+                    gapCls = {};
+                    for k = 1:numel(gaps)
+                        if isfield(gaps(k), 'role')
+                            gapRoles{end+1} = char(gaps(k).role); %#ok<AGROW>
+                        end
+                        if isfield(gaps(k), 'classification')
+                            gapCls{end+1} = char(gaps(k).classification); %#ok<AGROW>
+                        end
+                    end
+                    if ~isempty(gapRoles)
+                        roles = unique([roles, gapRoles]);
+                    end
+                    if ~isempty(gapCls)
+                        classifications = unique([classifications, gapCls]);
+                    end
+                end
+            end
+
+            nRoles = numel(roles);
+            nCls = numel(classifications);
+
+            % Build conformance matrix (default to 1.0 = fully conformant)
+            conformanceMatrix = ones(nRoles, nCls);
+
+            % Reduce conformance based on violations
+            if isfield(securityReport, 'violations') && ~isempty(securityReport.violations)
+                violations = securityReport.violations;
+                totalPerCell = ones(nRoles, nCls);
+                violPerCell = zeros(nRoles, nCls);
+                for k = 1:numel(violations)
+                    v = violations(k);
+                    % Find role index (use entityId as proxy if no role field)
+                    rIdx = 0;
+                    if isfield(v, 'role')
+                        rIdx = find(strcmp(roles, char(v.role)), 1);
+                    end
+                    % Find classification index
+                    cIdx = 0;
+                    if isfield(v, 'classification')
+                        cIdx = find(strcmp(classifications, char(v.classification)), 1);
+                    end
+                    if ~isempty(rIdx) && rIdx > 0 && ~isempty(cIdx) && cIdx > 0
+                        violPerCell(rIdx, cIdx) = violPerCell(rIdx, cIdx) + 1;
+                        totalPerCell(rIdx, cIdx) = totalPerCell(rIdx, cIdx) + 1;
+                    end
+                end
+                conformanceMatrix = 1 - (violPerCell ./ totalPerCell);
+            end
+
+            % Plot heatmap using imagesc
+            imagesc(ax, conformanceMatrix);
+            colormap(ax, parula);
+            colorbar(ax);
+            caxis(ax, [0 1]); %#ok<CAXIS>
+
+            ax.XTick = 1:nCls;
+            ax.XTickLabel = classifications;
+            ax.YTick = 1:nRoles;
+            ax.YTickLabel = roles;
+            xlabel(ax, 'Data Classification');
+            ylabel(ax, 'Role');
+            title(ax, 'Policy Conformance Heatmap (Role x Classification)');
+        end
+
+        % ------------------------------------------------------------------
+
+        function fig = attackSurfaceDiagram(securityReport)
+            % attackSurfaceDiagram  Network topology with security coloring.
+            %
+            %   fig = io.PlotFunctions.attackSurfaceDiagram(securityReport)
+            %
+            %   securityReport — SecurityEvaluationReport struct.
+            %
+            %   Creates a network topology figure showing nodes colored by
+            %   their security status (green=secure, red=compromised,
+            %   yellow=at risk).
+            %
+            %   Returns the figure handle.
+            %
+            % Requirements: R46
+
+            fig = figure('Visible', 'off');
+            ax = axes(fig); %#ok<LAXES>
+            hold(ax, 'on');
+
+            % Default node positions (stub - use circular layout)
+            nNodes = 6;
+            nodeLabels = {'PDP', 'TrustAnchor', 'Enclave_A', ...
+                'Enclave_B', 'Client_1', 'Client_2'};
+
+            % Extract node info from report if available
+            if isfield(securityReport, 'topology') && ...
+                    isfield(securityReport.topology, 'nodes')
+                topoNodes = securityReport.topology.nodes;
+                if isstruct(topoNodes)
+                    nNodes = numel(topoNodes);
+                    nodeLabels = cell(1, nNodes);
+                    for k = 1:nNodes
+                        if isfield(topoNodes(k), 'id')
+                            nodeLabels{k} = char(topoNodes(k).id);
+                        else
+                            nodeLabels{k} = sprintf('Node_%d', k);
+                        end
+                    end
+                end
+            end
+
+            % Circular layout
+            theta = linspace(0, 2*pi, nNodes+1);
+            theta = theta(1:end-1);
+            xPos = cos(theta);
+            yPos = sin(theta);
+
+            % Color nodes based on violations
+            nodeColors = repmat([0.2 0.8 0.2], nNodes, 1); % default green
+
+            if isfield(securityReport, 'violations') && ~isempty(securityReport.violations)
+                % Mark nodes with violations as red
+                for k = 1:numel(securityReport.violations)
+                    v = securityReport.violations(k);
+                    if isfield(v, 'enclave') && ~isempty(v.enclave)
+                        enc = char(v.enclave);
+                        idx = find(strcmp(nodeLabels, enc), 1);
+                        if ~isempty(idx)
+                            nodeColors(idx, :) = [0.9 0.1 0.1]; % red
+                        end
+                    end
+                end
+            end
+
+            % Draw edges (fully connected for stub)
+            for i = 1:nNodes
+                for j = (i+1):nNodes
+                    plot(ax, [xPos(i) xPos(j)], [yPos(i) yPos(j)], ...
+                        '-', 'Color', [0.7 0.7 0.7], 'LineWidth', 0.5);
+                end
+            end
+
+            % Draw nodes
+            for k = 1:nNodes
+                plot(ax, xPos(k), yPos(k), 'o', ...
+                    'MarkerSize', 20, ...
+                    'MarkerFaceColor', nodeColors(k,:), ...
+                    'MarkerEdgeColor', nodeColors(k,:) * 0.7, ...
+                    'LineWidth', 1.5);
+                text(ax, xPos(k), yPos(k) - 0.15, nodeLabels{k}, ...
+                    'HorizontalAlignment', 'center', ...
+                    'FontSize', 8);
+            end
+
+            axis(ax, 'equal');
+            axis(ax, 'off');
+            title(ax, 'Attack Surface Diagram');
+            hold(ax, 'off');
+        end
+
+        % ------------------------------------------------------------------
+
+        function fig = degradationSecurityPlot(securityReport)
+            % degradationSecurityPlot  Color grid of DegradationSecurityMatrix.
+            %
+            %   fig = io.PlotFunctions.degradationSecurityPlot(securityReport)
+            %
+            %   securityReport — SecurityEvaluationReport struct with
+            %                    degradationMatrix field.
+            %
+            %   Creates a color grid showing degradation scenarios (rows)
+            %   versus security properties (columns). Green = property held,
+            %   red = property violated.
+            %
+            %   Returns the figure handle.
+            %
+            % Requirements: R47
+
+            fig = figure('Visible', 'off');
+            ax = axes(fig); %#ok<LAXES>
+
+            % Default data
+            scenarioNames = {'pdp_outage', 'trust_anchor_outage', 'link_outage'};
+            properties = {'PDP availability', 'credential freshness', ...
+                'replication consistency', 'access control enforcement'};
+            results = ones(3, 4); % default all pass
+
+            % Extract from report if available
+            if isfield(securityReport, 'degradationMatrix')
+                dm = securityReport.degradationMatrix;
+                if isfield(dm, 'scenarioNames') && ~isempty(dm.scenarioNames)
+                    scenarioNames = dm.scenarioNames;
+                end
+                if isfield(dm, 'properties') && ~isempty(dm.properties)
+                    properties = dm.properties;
+                end
+                if isfield(dm, 'results') && ~isempty(dm.results)
+                    results = double(dm.results);
+                end
+            end
+
+            nScen = numel(scenarioNames);
+            nProp = numel(properties);
+
+            % Ensure results matrix matches dimensions
+            if size(results, 1) ~= nScen || size(results, 2) ~= nProp
+                results = ones(nScen, nProp);
+            end
+
+            % Create color grid: green (1) for pass, red (0) for fail
+            imagesc(ax, results);
+
+            % Custom colormap: red (0) → green (1)
+            cmap = [0.9 0.2 0.2; 0.2 0.8 0.2];
+            colormap(ax, cmap);
+            caxis(ax, [0 1]); %#ok<CAXIS>
+
+            ax.XTick = 1:nProp;
+            ax.XTickLabel = properties;
+            ax.XTickLabelRotation = 30;
+            ax.YTick = 1:nScen;
+            ax.YTickLabel = scenarioNames;
+            xlabel(ax, 'Security Property');
+            ylabel(ax, 'Degradation Scenario');
+            title(ax, 'Degradation Security Matrix');
+        end
+
     end % methods (Static)
 
 end % classdef

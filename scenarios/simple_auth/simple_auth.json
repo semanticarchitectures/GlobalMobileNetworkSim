@@ -1,0 +1,72 @@
+{
+  "scenarioName": "SimpleAuth",
+  "simulationDurationSec": 60,
+
+  "nodes": [
+    {
+      "id": "WORKSTATION",
+      "type": "Stationary",
+      "lat": 38.951,
+      "lon": -77.013,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    },
+    {
+      "id": "AUTH_SERVER",
+      "type": "Stationary",
+      "lat": 38.955,
+      "lon": -77.020,
+      "altM": 0.0,
+      "trajectory": null,
+      "keplerElements": null
+    }
+  ],
+
+  "links": [
+    {
+      "id": "WS_TO_AUTH",
+      "type": "Fiber",
+      "srcNodeId": "WORKSTATION",
+      "dstNodeId": "AUTH_SERVER",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0,
+      "outageDuration": { "distribution": "fixed", "value": 0 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 1
+    },
+    {
+      "id": "AUTH_TO_WS",
+      "type": "Fiber",
+      "srcNodeId": "AUTH_SERVER",
+      "dstNodeId": "WORKSTATION",
+      "nominalLatencyMs": 2,
+      "bandwidthBps": 1000000000,
+      "outageRate": 0,
+      "outageDuration": { "distribution": "fixed", "value": 0 },
+      "backgroundTraffic": { "distribution": "uniform", "min": 0.1, "max": 0.2 },
+      "coverageRadiusM": null,
+      "congestionPenaltyMs": 1
+    }
+  ],
+
+  "c2Messages": [
+    { "id": "authn_request",    "srcNodeId": "WORKSTATION", "dstNodeId": "AUTH_SERVER", "sizeBytes": 256,  "scheduledTimeSec": 5  },
+    { "id": "authn_challenge",  "srcNodeId": "AUTH_SERVER", "dstNodeId": "WORKSTATION", "sizeBytes": 128,  "scheduledTimeSec": 8  },
+    { "id": "authn_response",   "srcNodeId": "WORKSTATION", "dstNodeId": "AUTH_SERVER", "sizeBytes": 512,  "scheduledTimeSec": 12 },
+    { "id": "authn_token",      "srcNodeId": "AUTH_SERVER", "dstNodeId": "WORKSTATION", "sizeBytes": 1024, "scheduledTimeSec": 15 },
+    { "id": "authz_request",    "srcNodeId": "WORKSTATION", "dstNodeId": "AUTH_SERVER", "sizeBytes": 256,  "scheduledTimeSec": 20 },
+    { "id": "authz_grant",      "srcNodeId": "AUTH_SERVER", "dstNodeId": "WORKSTATION", "sizeBytes": 512,  "scheduledTimeSec": 23 },
+    { "id": "resource_access",  "srcNodeId": "WORKSTATION", "dstNodeId": "AUTH_SERVER", "sizeBytes": 128,  "scheduledTimeSec": 30 },
+    { "id": "resource_response","srcNodeId": "AUTH_SERVER", "dstNodeId": "WORKSTATION", "sizeBytes": 2048, "scheduledTimeSec": 33 }
+  ],
+
+  "entities": [
+    { "id": "user-jsmith", "nodeId": "WORKSTATION", "type": "human" },
+    { "id": "auth-service", "nodeId": "AUTH_SERVER", "type": "npe" }
+  ],
+
+  "policyDefinitionFile": "policy.json"
+}

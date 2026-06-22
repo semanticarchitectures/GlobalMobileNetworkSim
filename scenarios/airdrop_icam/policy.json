@@ -1,0 +1,34 @@
+{
+  "enclaves": [
+    {
+      "enclaveId": "mission_ops",
+      "cacheTtlSec": 300,
+      "failPolicy": "open"
+    },
+    {
+      "enclaveId": "flight_ops",
+      "cacheTtlSec": 600,
+      "failPolicy": "open"
+    }
+  ],
+  "trustAnchors": [
+    {
+      "trustAnchorId": "ops-ca",
+      "nodeId": "OPS_CENTER",
+      "certificateValidityPeriodSec": 7200
+    }
+  ],
+  "rules": [
+    {"enclave": "flight_ops", "role": "pilot",     "messageType": "*",                        "decision": "permit"},
+    {"enclave": "flight_ops", "role": "copilot",   "messageType": "*",                        "decision": "permit"},
+    {"enclave": "flight_ops", "role": "navigator", "messageType": "*",                        "decision": "permit"},
+    {"enclave": "flight_ops", "role": "aircraft",  "messageType": "*",                        "decision": "permit"},
+    {"enclave": "mission_ops","role": "pilot",     "messageType": "*",                        "decision": "permit"},
+    {"enclave": "mission_ops","role": "copilot",   "messageType": "data_item:UNCLASSIFIED",   "decision": "permit"},
+    {"enclave": "mission_ops","role": "navigator", "messageType": "data_item:UNCLASSIFIED",   "decision": "permit"},
+    {"enclave": "mission_ops","role": "aircraft",  "messageType": "data_item:UNCLASSIFIED",   "decision": "permit"},
+    {"enclave": "mission_ops","role": "ground_dz", "messageType": "*",                        "decision": "permit"},
+    {"enclave": "mission_ops","role": "ops_ctrl",  "messageType": "*",                        "decision": "permit"},
+    {"enclave": "*",          "role": "*",         "messageType": "*",                        "decision": "deny"}
+  ]
+}
