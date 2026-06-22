@@ -1054,17 +1054,28 @@ classdef MissionVideoGenerator < handle
             %   nodeDef = obj.findNodeDef(nodeId, scenarioStruct)
             %
             %   Returns the node struct from scenarioStruct.nodes matching
-            %   the given nodeId, or [] if not found.
+            %   the given nodeId, or [] if not found. Handles both struct
+            %   arrays and cell arrays (from jsondecode with mixed fields).
 
             nodeDef = [];
             if isempty(scenarioStruct) || ~isfield(scenarioStruct, 'nodes')
                 return;
             end
             nodes = scenarioStruct.nodes;
-            for i = 1:numel(nodes)
-                if strcmp(nodes(i).id, nodeId)
-                    nodeDef = nodes(i);
-                    return;
+            if isstruct(nodes)
+                for i = 1:numel(nodes)
+                    if strcmp(nodes(i).id, nodeId)
+                        nodeDef = nodes(i);
+                        return;
+                    end
+                end
+            elseif iscell(nodes)
+                for i = 1:numel(nodes)
+                    nd = nodes{i};
+                    if strcmp(nd.id, nodeId)
+                        nodeDef = nd;
+                        return;
+                    end
                 end
             end
         end
