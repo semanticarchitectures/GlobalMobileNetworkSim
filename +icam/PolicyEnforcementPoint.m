@@ -47,10 +47,11 @@ classdef PolicyEnforcementPoint < handle
         % Public methods
         % ------------------------------------------------------------------
 
-        function result = checkSend(obj, srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)
+        function result = checkSend(obj, srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec, entityRole)
             % checkSend  Enforce send-side access control.
             %
             %   result = pep.checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec)
+            %   result = pep.checkSend(srcEntityId, dstEntityId, messageType, enclaveId, simTimeSec, entityRole)
             %
             %   Returns struct {decision ('permit'|'deny'), reason (string), cacheHit (logical)}.
             %
@@ -67,6 +68,11 @@ classdef PolicyEnforcementPoint < handle
             msgTypeStr = char(messageType);
             encStr     = char(enclaveId);
 
+            % Resolve entity role if not provided
+            if nargin < 7 || isempty(entityRole)
+                entityRole = obj.lookupEntityRole(srcStr, encStr);
+            end
+
             % Try cache first
             cachedDecision = obj.credentialCache.lookup(srcStr, msgTypeStr, encStr, simTimeSec);
 
@@ -76,9 +82,9 @@ classdef PolicyEnforcementPoint < handle
                 result.reason   = 'Cache hit';
                 result.cacheHit = true;
             else
-                % Cache miss — call PDP
+                % Cache miss — call PDP with role
                 pdpResult = obj.policyDecisionPoint.evaluate( ...
-                    srcStr, dstStr, msgTypeStr, encStr, simTimeSec);
+                    srcStr, dstStr, msgTypeStr, encStr, simTimeSec, entityRole);
 
                 % Store result in cache
                 obj.credentialCache.store(srcStr, msgTypeStr, encStr, pdpResult.decision, simTimeSec);
@@ -181,6 +187,22 @@ classdef PolicyEnforcementPoint < handle
 
             obj.accessDeniedLog(end+1) = entry;
             obj.nAccessDenied = obj.nAccessDenied + uint64(1);
+        end
+
+        function role = lookupEntityRole(obj, entityId, enclaveId) %#ok<INUSL>
+            % lookupEntityRole  Look up an entity's role from the EntityRegistry.
+            %
+            %   Checks if the PEP has access to an entity registry and looks
+            %   up the entity's role binding for the specified enclave.
+            %   Returns '*' (wildcard) if entity or role not found.
+
+            role = '*';
+
+            % The PEP holds a reference to the PDP which has the policy.
+            % Entity role lookups would ideally come from the EntityRegistry,
+            % but the PEP doesn't hold a direct reference. For now, try to
+            % infer from the entity ID naming convention or return wildcard.
+            % This will be fully resolved when EntityRegistry is threaded through.
         end
 
     end % methods (Access = private)

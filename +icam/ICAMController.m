@@ -24,6 +24,9 @@ classdef ICAMController < handle
         nAuthFailed         % uint64
         nAuthTimedOut       % uint64
 
+        % Scenario reference for entity role lookups
+        scenario            % struct (stored on initialize)
+
         % Certificate renewal tracking
         nCertRenewalsTotal      % uint64
         nCertRenewalsSuccessful % uint64
@@ -86,6 +89,7 @@ classdef ICAMController < handle
             % Requirements: 17.1, 18.1, 19.1, 20.1, 21.1, 23.1
 
             obj.eventCalendar = eventCalendar;
+            obj.scenario = scenario;  % Store for entity role lookups
 
             % ---- EntityRegistry ----
             if isfield(scenario, 'entities') && ~isempty(scenario.entities)
@@ -144,7 +148,7 @@ classdef ICAMController < handle
             %   Returns 'permit', 'deny', or 'pending'.
             %
             %   - If not authenticated: call authManager.initiateExchange and return 'pending'
-            %   - Call pep.checkSend; return 'permit' or 'deny'
+            %   - Call pep.checkSend with entity role; return 'permit' or 'deny'
             %
             % Requirements: 19.1, 21.1, 21.5
 
@@ -159,8 +163,11 @@ classdef ICAMController < handle
                 return;
             end
 
-            % Enforce policy
-            result = obj.pep.checkSend(srcStr, dstStr, char(messageType), char(enclaveId), simTimeSec);
+            % Resolve entity role for RBAC
+            entityRole = obj.resolveEntityRole(srcStr);
+
+            % Enforce policy with role
+            result = obj.pep.checkSend(srcStr, dstStr, char(messageType), char(enclaveId), simTimeSec, entityRole);
             decision = result.decision;
         end
 
@@ -603,6 +610,54 @@ classdef ICAMController < handle
                     end
                 catch
                     % Skip entities that can't be retrieved
+                end
+            end
+        end
+
+        function role = resolveEntityRole(obj, entityId)
+            % resolveEntityRole  Look up the role for an entity from the EntityRegistry.
+            %
+            %   role = ic.resolveEntityRole(entityId)
+            %
+            %   Returns the entity's type/role string (e.g., 'pilot', 'aircraft').
+            %   Falls back to '*' if entity not found or has no role.
+
+            role = '*';
+
+            % Try EntityRegistry if available
+            if ~isempty(obj.entityRegistry)
+                try
+                    entityData = obj.entityRegistry.getEntity(entityId);
+                    if isfield(entityData, 'type') && ~isempty(entityData.type)
+                        role = char(entityData.type);
+                    end
+                catch
+                    % Entity not found in registry — fall through
+                end
+            end
+
+            % If still wildcard, try scenario entities for a role/type field
+            if strcmp(role, '*') && ~isempty(obj.scenario) && ...
+                    isfield(obj.scenario, 'entities') && ~isempty(obj.scenario.entities)
+                ents = obj.scenario.entities;
+                for k = 1:numel(ents)
+                    if isstruct(ents)
+                        ent = ents(k);
+                    elseif iscell(ents)
+                        ent = ents{k};
+                    else
+                        break;
+                    end
+                    if isfield(ent, 'id') && strcmp(char(ent.id), entityId)
+                        if isfield(ent, 'role') && ~isempty(ent.role)
+                            role = char(ent.role);
+                        elseif isfield(ent, 'type') && ~isempty(ent.type) && ...
+                                ~ismember(char(ent.type), {'human', 'npe'})
+                            % Only use type as role if it's a meaningful role name
+                            role = char(ent.type);
+                        end
+                        return;
+                    end
                 end
             end
         end

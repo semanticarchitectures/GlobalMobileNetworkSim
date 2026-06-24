@@ -60,21 +60,33 @@ classdef PolicyDecisionPoint < handle
         % ------------------------------------------------------------------
 
         function result = evaluate(obj, requestingEntityId, targetEntityId, ...
-                messageType, enclaveId, simTimeSec) %#ok<INUSL>
+                messageType, enclaveId, simTimeSec, entityRole) %#ok<INUSL>
             % evaluate  Apply policy rules and return a decision.
             %
             %   result = pdp.evaluate(requestingEntityId, targetEntityId, ...
             %                         messageType, enclaveId, simTimeSec)
+            %   result = pdp.evaluate(requestingEntityId, targetEntityId, ...
+            %                         messageType, enclaveId, simTimeSec, entityRole)
             %
             %   Returns struct {decision ('permit'|'deny'), reason (string)}.
             %   Rules are applied in order; first matching rule wins.
-            %   '*' in a rule's messageType field matches any message type.
+            %   '*' in a rule's enclave, role, or messageType field matches any value.
             %   Falls back to the enclave's failPolicy when no rule matches.
+            %
+            %   entityRole (optional) — the requesting entity's role in the
+            %   relevant enclave. When omitted, role matching uses '*' (any).
             %
             % Requirements: 20.3, 20.5
 
             msgTypeStr  = char(messageType);
             enclaveStr  = char(enclaveId);
+
+            % Resolve entity role (default '*' for backwards compatibility)
+            if nargin < 7 || isempty(entityRole)
+                roleStr = '*';
+            else
+                roleStr = char(entityRole);
+            end
 
             % Walk rules in order
             if isfield(obj.policy, 'rules') && ~isempty(obj.policy.rules)
@@ -82,18 +94,32 @@ classdef PolicyDecisionPoint < handle
                 n = numel(rules);
                 for k = 1:n
                     rule = rules(k);
-                    % Match enclave
-                    if ~strcmp(char(rule.enclave), enclaveStr)
+
+                    % Match enclave ('*' or exact)
+                    ruleEnclave = char(rule.enclave);
+                    if ~strcmp(ruleEnclave, '*') && ~strcmp(ruleEnclave, enclaveStr)
                         continue;
                     end
-                    % Match messageType (support '*' wildcard)
+
+                    % Match role ('*' or exact)
+                    if isfield(rule, 'role')
+                        ruleRole = char(rule.role);
+                        if ~strcmp(ruleRole, '*') && ~strcmp(roleStr, '*') && ...
+                                ~strcmp(ruleRole, roleStr)
+                            continue;
+                        end
+                    end
+
+                    % Match messageType ('*' or exact)
                     ruleType = char(rule.messageType);
                     if ~strcmp(ruleType, '*') && ~strcmp(ruleType, msgTypeStr)
                         continue;
                     end
+
                     % Rule matched
                     result.decision = char(rule.decision);
-                    result.reason   = sprintf('Matched rule %d', k);
+                    result.reason   = sprintf('Matched rule %d (role=%s, enclave=%s, msgType=%s)', ...
+                        k, ruleRole, ruleEnclave, ruleType);
                     return;
                 end
             end
