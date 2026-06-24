@@ -20,14 +20,17 @@ On top of the network layer, the simulator supports two additional layers:
 
 ## Architecture
 
-The simulator is organized into five MATLAB packages:
+The simulator is organized into eight MATLAB packages:
 
 ```
 +sim/       — Discrete-event simulation engine (EventCalendar, SimController)
 +network/   — Node/link registries, routing, outage, background traffic, geodesy
 +agent/     — LLM agents, role loading, behavior tracing, fidelity evaluation
 +icam/      — Entity registry, credentials, authentication, policy enforcement
-+io/        — Scenario I/O, report writing, visualization
++io/        — Scenario I/O, report writing, visualization, traffic replay
++data/      — Operational archive (HDF5 store, run registry, event archiver, query engine)
++fabric/    — Data fabric (DataItem, DataCatalog, ProvenanceGraph, replication)
++security/  — Security evaluation (SecurityOracle, PolicyAnalyzer, adversarial agents)
 ```
 
 ### Key Design Decisions

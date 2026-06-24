@@ -216,7 +216,7 @@ classdef DataFabricController < handle
             end
 
             record.simStartTime = sc.runTimestamp;
-            record.simEndTime = datestr(now, 'yyyy-mm-ddTHH:MM:SS'); %#ok<TNOW1,DATST>
+            record.simEndTime = char(datetime('now', 'Format', 'yyyy-MM-dd''T''HH:mm:ss'));
             record.wallClockDurationSec = sc.wallClockDurationSec;
 
             % Node and link counts
@@ -283,10 +283,16 @@ classdef DataFabricController < handle
                 return;
             end
 
-            % Get all records from registry
+            % Get all records from registry, sorted by simStartTime ascending
             allRecords = obj.Registry.list();
             if isempty(allRecords) || height(allRecords) == 0
                 return;
+            end
+            % Sort by simStartTime to ensure oldest-first removal
+            try
+                allRecords = sortrows(allRecords, 'simStartTime');
+            catch
+                % If sorting fails (e.g., missing column), proceed unsorted
             end
 
             nRuns = height(allRecords);
@@ -636,7 +642,9 @@ classdef DataFabricController < handle
                             try
                                 filePath = char(agents(k).roleDefinitionFile);
                                 agents(k).roleDefinitionContent = fileread(filePath);
-                            catch
+                            catch ME
+                                warning('netsim:data:embedFailed', ...
+                                    'Cannot embed role file "%s": %s', filePath, ME.message);
                                 agents(k).roleDefinitionContent = '';
                             end
                         end
@@ -649,7 +657,9 @@ classdef DataFabricController < handle
                             try
                                 filePath = char(agents{k}.roleDefinitionFile);
                                 agents{k}.roleDefinitionContent = fileread(filePath);
-                            catch
+                            catch ME
+                                warning('netsim:data:embedFailed', ...
+                                    'Cannot embed role file "%s": %s', filePath, ME.message);
                                 agents{k}.roleDefinitionContent = '';
                             end
                         end
@@ -664,7 +674,9 @@ classdef DataFabricController < handle
                 try
                     filePath = char(scenario.policyDefinitionFile);
                     scenario.policyDefinitionContent = fileread(filePath);
-                catch
+                catch ME
+                    warning('netsim:data:embedFailed', ...
+                        'Cannot embed policy file "%s": %s', filePath, ME.message);
                     scenario.policyDefinitionContent = '';
                 end
             end
@@ -675,7 +687,9 @@ classdef DataFabricController < handle
                 try
                     filePath = char(scenario.referenceBehaviorFile);
                     scenario.referenceBehaviorContent = fileread(filePath);
-                catch
+                catch ME
+                    warning('netsim:data:embedFailed', ...
+                        'Cannot embed reference behavior file "%s": %s', filePath, ME.message);
                     scenario.referenceBehaviorContent = '';
                 end
             end
