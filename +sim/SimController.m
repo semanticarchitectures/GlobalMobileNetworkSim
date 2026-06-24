@@ -58,6 +58,15 @@ classdef SimController < handle
         % Position update interval for NODE_POSITION events (seconds; 0 = disabled)
         positionUpdateIntervalSec  % double (default 0)
 
+        % Last simulation time when LOS links were checked (performance throttle)
+        lastLOSCheckTime  % double (default 0)
+
+        % O(1) agent-to-node lookup map (built at construction)
+        agentNodeMap      % containers.Map: agentId → nodeId
+
+        % Event log count (actual entries, vs pre-allocated capacity)
+        eventLogCount     % double
+
         % Accumulated latencies of delivered C2 messages (for statistics)
         deliveredLatenciesMs  % double array
     end
@@ -115,7 +124,10 @@ classdef SimController < handle
             sc.nextEventId    = uint64(1);
 
             % Initialise empty event log with the canonical field set.
-            sc.eventLog = sim.SimController.makeEmptyLogEntry(0);
+            % Pre-allocate with estimated capacity to avoid per-event struct copies.
+            estimatedEvents = max(1000, ceil(scenario.simulationDurationSec * 0.5));
+            sc.eventLog = sim.SimController.makeEmptyLogEntry(estimatedEvents);
+            sc.eventLogCount = 0;  % actual entries written
 
             % Initialise statistics counters.
             sc.stats = struct( ...
@@ -129,6 +141,7 @@ classdef SimController < handle
 
             % Position update interval (default 0 = disabled).
             sc.positionUpdateIntervalSec = 0;
+            sc.lastLOSCheckTime = 0;
 
             % Initialise delivered latencies accumulator.
             sc.deliveredLatenciesMs = [];
@@ -179,6 +192,21 @@ classdef SimController < handle
                     isfield(scenario, 'agents') && ~isempty(scenario.agents)
                 sc.agentRegistry = agent.AgentRegistry( ...
                     scenario.agents, sc.nodeRegistry, llmClient, sc.eventCalendar);
+            end
+
+            % Build O(1) agent-to-node lookup map from scenario.agents
+            sc.agentNodeMap = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            if isfield(scenario, 'agents') && ~isempty(scenario.agents)
+                agents = scenario.agents;
+                if isstruct(agents)
+                    for k = 1:numel(agents)
+                        sc.agentNodeMap(char(agents(k).id)) = char(agents(k).nodeId);
+                    end
+                elseif iscell(agents)
+                    for k = 1:numel(agents)
+                        sc.agentNodeMap(char(agents{k}.id)) = char(agents{k}.nodeId);
+                    end
+                end
             end
 
             % Construct FidelityEvaluator if scenario has a referenceBehavior.
@@ -271,9 +299,17 @@ classdef SimController < handle
                 % Advance simulation clock.
                 sc.simTimeSec = event.time;
 
-                % Update LOS link states before dispatching (Task 8.2).
+                % Update LOS link states only on position events or when
+                % sufficient sim time has elapsed (performance: avoids
+                % O(n·events) position recomputes).
                 if ~isempty(sc.nodeRegistry) && ~isempty(sc.linkRegistry)
-                    sc.updateLOSLinks();
+                    if strcmp(event.type, sim.EventCalendar.NODE_POSITION) || ...
+                            (sc.positionUpdateIntervalSec > 0 && ...
+                             sc.simTimeSec - sc.lastLOSCheckTime >= sc.positionUpdateIntervalSec) || ...
+                            strcmp(event.type, sim.EventCalendar.C2_MESSAGE_TX)
+                        sc.updateLOSLinks();
+                        sc.lastLOSCheckTime = sc.simTimeSec;
+                    end
                 end
 
                 % Dispatch to handler.
@@ -969,6 +1005,12 @@ classdef SimController < handle
 
         function handleSimEnd(sc, event)
             sc.appendLog(event, '', '', '', '', NaN, '');
+
+            % Trim event log to actual size (remove pre-allocated empty slots)
+            if sc.eventLogCount < numel(sc.eventLog)
+                sc.eventLog = sc.eventLog(1:sc.eventLogCount);
+            end
+
             if ~isempty(sc.wallClockStart)
                 sc.wallClockDurationSec = toc(sc.wallClockStart);
             end
@@ -1024,29 +1066,14 @@ classdef SimController < handle
         function nodeId = getAgentNodeId_(sc, agentId)
             % getAgentNodeId_  Return the nodeId bound to the given agent.
             %
-            % Looks up the agent definition in scenario.agents by agentId.
+            % O(1) lookup via pre-built agentNodeMap.
             % Returns '' if not found.
 
-            nodeId = '';
-            if ~isfield(sc.scenario, 'agents') || isempty(sc.scenario.agents)
-                return;
-            end
-            agents = sc.scenario.agents;
-            if isstruct(agents)
-                for k = 1:numel(agents)
-                    if string(agents(k).id) == string(agentId)
-                        nodeId = char(agents(k).nodeId);
-                        return;
-                    end
-                end
-            elseif iscell(agents)
-                for k = 1:numel(agents)
-                    ag = agents{k};
-                    if string(ag.id) == string(agentId)
-                        nodeId = char(ag.nodeId);
-                        return;
-                    end
-                end
+            key = char(agentId);
+            if sc.agentNodeMap.isKey(key)
+                nodeId = sc.agentNodeMap(key);
+            else
+                nodeId = '';
             end
         end
 
@@ -1072,11 +1099,14 @@ classdef SimController < handle
                 posEntry.dstNodeId  = sprintf('%.1f', pos.altM);
                 posEntry.latencyMs  = NaN;
                 posEntry.reason     = '';
-                if isempty(sc.eventLog)
-                    sc.eventLog = posEntry;
-                else
-                    sc.eventLog(end+1) = posEntry;
+
+                % Use indexed assignment (consistent with appendLog)
+                sc.eventLogCount = sc.eventLogCount + 1;
+                idx = sc.eventLogCount;
+                if idx > numel(sc.eventLog)
+                    sc.eventLog(idx * 2) = sc.eventLog(1);
                 end
+                sc.eventLog(idx) = posEntry;
             end
             % Schedule next position update
             sc.scheduleNextPositionUpdate(sc.simTimeSec);
@@ -1146,23 +1176,29 @@ classdef SimController < handle
 
         function appendLog(sc, event, linkId, msgId, srcNodeId, dstNodeId, ...
                 latencyMs, reason)
-            % appendLog  Append one entry to sc.eventLog.
+            % appendLog  Append one entry to sc.eventLog using indexed assignment.
+            %
+            % Uses pre-allocated array with eventLogCount tracking. Grows
+            % by doubling if capacity exceeded (amortized O(1)).
 
-            entry.eventId    = sc.nextId();
-            entry.simTimeSec = sc.simTimeSec;
-            entry.eventType  = event.type;
-            entry.linkId     = linkId;
-            entry.msgId      = msgId;
-            entry.srcNodeId  = srcNodeId;
-            entry.dstNodeId  = dstNodeId;
-            entry.latencyMs  = latencyMs;
-            entry.reason     = reason;
+            sc.eventLogCount = sc.eventLogCount + 1;
+            idx = sc.eventLogCount;
 
-            if isempty(sc.eventLog)
-                sc.eventLog = entry;
-            else
-                sc.eventLog(end + 1) = entry;
+            % Grow if needed (double capacity)
+            if idx > numel(sc.eventLog)
+                newCapacity = max(idx * 2, 1000);
+                sc.eventLog(newCapacity) = sc.eventLog(1);  % extend struct array
             end
+
+            sc.eventLog(idx).eventId    = sc.nextId();
+            sc.eventLog(idx).simTimeSec = sc.simTimeSec;
+            sc.eventLog(idx).eventType  = event.type;
+            sc.eventLog(idx).linkId     = linkId;
+            sc.eventLog(idx).msgId      = msgId;
+            sc.eventLog(idx).srcNodeId  = srcNodeId;
+            sc.eventLog(idx).dstNodeId  = dstNodeId;
+            sc.eventLog(idx).latencyMs  = latencyMs;
+            sc.eventLog(idx).reason     = reason;
         end
 
         function entityId = resolveEntityForNode(sc, nodeId, payload)
