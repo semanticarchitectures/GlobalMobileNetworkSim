@@ -246,9 +246,9 @@ classdef SimController < handle
             try
                 sc.runId = char(java.util.UUID.randomUUID());
             catch
-                sc.runId = sprintf('run-%s', datestr(now, 'yyyymmddHHMMSSFFF')); %#ok<TNOW1,DATST>
+                sc.runId = sprintf('run-%s', char(datetime('now', 'Format', 'yyyyMMddHHmmssSSS')));
             end
-            sc.runTimestamp = datestr(now, 'yyyy-mm-ddTHH:MM:SS'); %#ok<TNOW1,DATST>
+            sc.runTimestamp = char(datetime('now', 'Format', 'yyyy-MM-dd''T''HH:mm:ss'));
 
             % Notify DataFabricController of simulation start (if configured).
             if ~isempty(sc.dataFabricController)
@@ -440,7 +440,7 @@ classdef SimController < handle
             % Count queued C2_MESSAGE_TX events (approximate — counts all
             % events of that type still in the calendar is not directly
             % accessible; report total queued events instead)
-            state.queuedC2Messages = 0;  % placeholder; full count requires calendar scan
+            state.queuedC2Messages = sc.eventCalendar.eventCount();  % total queued events (approx)
         end
 
         function n = eventCount(sc)
@@ -836,6 +836,18 @@ classdef SimController < handle
             sc.stats.c2MessagesRx = sc.stats.c2MessagesRx + uint64(1);
             sc.deliveredLatenciesMs(end + 1) = latencyMs;
             sc.appendLog(event, '', msgId, srcId, dstId, latencyMs, '');
+
+            % Auto-create c2_log DataItem if data fabric is configured (Issue #8)
+            if ~isempty(sc.dataFabricController)
+                ingestPayload = sc.dataFabricController.onC2MessageDelivered(event, sc.simTimeSec);
+                if isstruct(ingestPayload) && ~isempty(fieldnames(ingestPayload))
+                    ingestEvent.time = sc.simTimeSec;
+                    ingestEvent.type = sim.EventCalendar.DATA_INGEST;
+                    ingestEvent.id = sc.nextId();
+                    ingestEvent.payload = ingestPayload;
+                    sc.eventCalendar.schedule(ingestEvent);
+                end
+            end
 
             % Deliver to agent bound to the destination node (if any).
             if ~isempty(sc.agentRegistry)
