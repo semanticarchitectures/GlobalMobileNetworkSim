@@ -287,12 +287,12 @@
   ],
 
   "entities": [
-    { "id": "pilot-01",      "nodeId": "AIRCRAFT",    "type": "human" },
-    { "id": "copilot-01",    "nodeId": "AIRCRAFT",    "type": "human" },
-    { "id": "navigator-01",  "nodeId": "AIRCRAFT",    "type": "human" },
-    { "id": "aircraft-npe",  "nodeId": "AIRCRAFT",    "type": "npe"   },
-    { "id": "ops-controller","nodeId": "OPS_CENTER",  "type": "human" },
-    { "id": "ground-dz-lead","nodeId": "GROUND_TEAM", "type": "human" }
+    { "id": "pilot-01",      "nodeId": "AIRCRAFT",    "type": "human", "role": "pilot" },
+    { "id": "copilot-01",    "nodeId": "AIRCRAFT",    "type": "human", "role": "copilot" },
+    { "id": "navigator-01",  "nodeId": "AIRCRAFT",    "type": "human", "role": "navigator" },
+    { "id": "aircraft-npe",  "nodeId": "AIRCRAFT",    "type": "npe",   "role": "aircraft" },
+    { "id": "ops-controller","nodeId": "OPS_CENTER",  "type": "human", "role": "ops_ctrl" },
+    { "id": "ground-dz-lead","nodeId": "GROUND_TEAM", "type": "human", "role": "ground_dz" }
   ],
 
   "policyDefinitionFile": "policy.json"

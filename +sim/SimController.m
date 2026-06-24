@@ -648,6 +648,21 @@ classdef SimController < handle
                         sc.icamController.handleCertRenewal(event);
                     end
 
+                case {sim.EventCalendar.DATA_INGEST, ...
+                      sim.EventCalendar.DATA_FETCH, ...
+                      sim.EventCalendar.DATA_QUERY, ...
+                      sim.EventCalendar.DATA_REPLICATE, ...
+                      sim.EventCalendar.DATA_FETCH_RESULT, ...
+                      sim.EventCalendar.DATA_FETCH_DENIED, ...
+                      sim.EventCalendar.DATA_QUERY_RESULT}
+                    if ~isempty(sc.dataFabricController)
+                        logEntry = sc.dataFabricController.handleDataEvent( ...
+                            event, sc.simTimeSec, sc.eventCalendar, sc.icamController);
+                        if ~isempty(logEntry) && isstruct(logEntry) && isfield(logEntry, 'type')
+                            sc.appendLog(event, '', '', '', '', NaN, char(logEntry.type));
+                        end
+                    end
+
                 case sim.EventCalendar.SIM_END
                     sc.handleSimEnd(event);
 
@@ -675,11 +690,20 @@ classdef SimController < handle
             sc.stats.c2MessagesTx = sc.stats.c2MessagesTx + uint64(1);
 
             % ICAM gate: check send permission
-            if ~isempty(sc.icamController)
-                % Determine entity IDs from node IDs (use node ID as entity ID if no entity registry)
-                srcEntityId = srcId;  % simplified: use nodeId as entityId
-                dstEntityId = dstId;
-                enclaveId = 'default';
+            % Authentication/authorization messages bypass ICAM enforcement
+            % to avoid circular dependency (auth needs network, network needs auth)
+            msgIdStr = char(msgId);
+            isAuthMsg = startsWith(msgIdStr, 'authn_') || startsWith(msgIdStr, 'authz_') || ...
+                        startsWith(msgIdStr, 'auth_');
+            if ~isempty(sc.icamController) && ~isAuthMsg
+                % Resolve entity ID: use senderEntityId from payload if present,
+                % otherwise look up the first entity hosted on the source node
+                srcEntityId = sc.resolveEntityForNode(srcId, p);
+                dstEntityId = sc.resolveEntityForNode(dstId, struct());
+
+                % Resolve enclave from entity's context or use first defined enclave
+                enclaveId = sc.resolveEnclaveForMessage(srcEntityId);
+
                 icamDecision = sc.icamController.checkSend(srcEntityId, dstEntityId, char(msgId), enclaveId, sc.simTimeSec);
                 if strcmp(icamDecision, 'deny')
                     % Record access-denied event and discard message
@@ -1139,6 +1163,93 @@ classdef SimController < handle
             else
                 sc.eventLog(end + 1) = entry;
             end
+        end
+
+        function entityId = resolveEntityForNode(sc, nodeId, payload)
+            % resolveEntityForNode  Determine the entity ID for a message on a node.
+            %
+            %   1. If payload has senderEntityId, use it
+            %   2. Otherwise look up the first entity on the node via scenario.entities
+            %   3. Fall back to nodeId
+
+            % Check payload for explicit sender
+            if isfield(payload, 'senderEntityId') && ~isempty(payload.senderEntityId)
+                entityId = char(payload.senderEntityId);
+                return;
+            end
+
+            % Look up entities on this node from the scenario
+            if isfield(sc.scenario, 'entities') && ~isempty(sc.scenario.entities)
+                ents = sc.scenario.entities;
+                for k = 1:numel(ents)
+                    if isstruct(ents)
+                        ent = ents(k);
+                    elseif iscell(ents)
+                        ent = ents{k};
+                    else
+                        break;
+                    end
+                    if isfield(ent, 'nodeId') && strcmp(char(ent.nodeId), char(nodeId))
+                        entityId = char(ent.id);
+                        return;
+                    end
+                end
+            end
+
+            % Fall back to nodeId
+            entityId = char(nodeId);
+        end
+
+        function enclaveId = resolveEnclaveForMessage(sc, entityId) %#ok<INUSL>
+            % resolveEnclaveForMessage  Determine the enclave for an entity.
+            %
+            %   Checks the ICAM controller's PDP for known enclaves,
+            %   then the scenario. Returns the first defined enclave or 'default'.
+
+            % Try to get the first enclave from the PDP via getFailPolicy
+            % (which internally checks enclaveMap)
+            if ~isempty(sc.icamController) && ~isempty(sc.icamController.pdp)
+                pdp = sc.icamController.pdp;
+                % Try known enclaves from the policy rules
+                if isfield(sc.scenario, 'policyDefinitionFile') && ...
+                        ~isempty(sc.scenario.policyDefinitionFile)
+                    try
+                        policyPath = char(sc.scenario.policyDefinitionFile);
+                        if isfield(sc.scenario, 'scenarioFilePath') && ...
+                                ~isempty(sc.scenario.scenarioFilePath) && ...
+                                ~java.io.File(policyPath).isAbsolute()
+                            scenarioDir = fileparts(char(sc.scenario.scenarioFilePath));
+                            policyPath = fullfile(scenarioDir, policyPath);
+                        end
+                        rawText = fileread(policyPath);
+                        policyData = jsondecode(rawText);
+                        if isfield(policyData, 'enclaves') && ~isempty(policyData.enclaves)
+                            enclaveId = char(policyData.enclaves(1).enclaveId);
+                            return;
+                        end
+                    catch
+                        % Fall through
+                    end
+                end
+            end
+
+            % Try to get enclave from scenario-level definition
+            if isfield(sc.scenario, 'enclaves') && ~isempty(sc.scenario.enclaves)
+                enc = sc.scenario.enclaves;
+                if isstruct(enc) && numel(enc) >= 1
+                    if isfield(enc(1), 'enclaveId')
+                        enclaveId = char(enc(1).enclaveId);
+                        return;
+                    end
+                elseif iscell(enc) && ~isempty(enc)
+                    if isfield(enc{1}, 'enclaveId')
+                        enclaveId = char(enc{1}.enclaveId);
+                        return;
+                    end
+                end
+            end
+
+            enclaveId = 'default';
         end
 
     end
