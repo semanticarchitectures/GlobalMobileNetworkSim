@@ -42,3 +42,20 @@ results/
 # Environment / secrets
 .env
 *.key
+
+# ---- Python port (appended for GMNS Python implementation) ----
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+uv.lock
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+# scenario run outputs (the sim writes here; do not commit run artifacts)
+output/
