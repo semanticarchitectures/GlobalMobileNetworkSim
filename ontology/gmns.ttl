@@ -1,0 +1,398 @@
+@prefix : <https://semanticarchitectures.com/ont/gmns/> .
+@prefix gmns: <https://semanticarchitectures.com/ont/gmns/> .
+@prefix cco: <https://www.commoncoreontologies.org/> .
+@prefix obo: <http://purl.obolibrary.org/obo/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+#################################################################
+# Ontology Header
+#################################################################
+
+<https://semanticarchitectures.com/ont/gmns>
+    rdf:type owl:Ontology ;
+    owl:versionIRI <https://semanticarchitectures.com/ont/gmns/0.1.0> ;
+    owl:imports <https://www.commoncoreontologies.org/CommonCoreOntologiesMerged> ;
+    dcterms:title "Global Mobile Network Simulation Ontology (GMNS)"@en ;
+    dcterms:creator "Semantic Architectures"@en ;
+    dcterms:license "Copyright © Semantic Architectures. All rights reserved."@en ;
+    rdfs:comment """Domain ontology for the GlobalMobileNetworkSim discrete-event
+simulation. Extends Basic Formal Ontology (ISO/IEC 21838-2) via the Common Core
+Ontologies (CCO), per the January 2024 DoD/IC CDO Council direction establishing
+BFO and CCO as baseline standards for formal DoD and IC ontology development.
+
+Parent-class IRIs verified against CCO merged release 2026-04-04
+(https://github.com/CommonCoreOntology/CommonCoreOntologies). CCO 2.x uses
+opaque numeric IRIs; the human-readable CCO label is given in an rdfs:comment
+on each subclass axiom's child term below.
+
+Scope: information artifacts exchanged and emitted at the simulation boundary
+(scenario specifications, event logs, behavior traces, ICAM records). Engine
+internals (event calendar, routing cache, struct-of-arrays storage) are
+deliberately out of scope."""@en .
+
+#################################################################
+# Annotation conventions
+#   skos:definition  — Aristotelian definition (genus + differentia)
+#   skos:editorialNote — modeling decisions flagged for ontology review
+#################################################################
+
+#################################################################
+# 1. NETWORK LAYER — Nodes, Platforms, Links
+#################################################################
+
+gmns:CommunicationNode rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000918 ;  # CCO: Telecommunication Network Node
+    rdfs:label "Communication Node"@en ;
+    skos:definition "A Telecommunication Network Node that is a member of a simulated global mobile network and can serve as the source, destination, or relay of C2 Messages."@en .
+
+gmns:StationaryCommunicationNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:CommunicationNode ;
+    rdfs:label "Stationary Communication Node"@en ;
+    skos:definition "A Communication Node whose geospatial location does not change during a simulation scenario."@en .
+
+gmns:MobileCommunicationNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:CommunicationNode ;
+    rdfs:label "Mobile Communication Node"@en ;
+    skos:definition "A Communication Node whose geospatial location changes during a simulation scenario, by waypoint trajectory interpolation or Keplerian orbital propagation."@en .
+
+gmns:OperationsCenterNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:StationaryCommunicationNode ;
+    rdfs:label "Operations Center Node"@en ;
+    skos:definition "A Stationary Communication Node located at a command-and-control facility."@en ;
+    skos:editorialNote "The facility itself should be instantiated separately as cco:ont00000192 (Facility) and related to this node via gmns:hostedOn."@en .
+
+gmns:GroundTeamTerminalNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:MobileCommunicationNode ;
+    rdfs:label "Ground Team Terminal Node"@en ;
+    skos:definition "A Mobile Communication Node realized by a portable terminal operated by ground personnel."@en .
+
+gmns:AirborneCommunicationNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:MobileCommunicationNode ;
+    rdfs:label "Airborne Communication Node"@en ;
+    skos:definition "A Mobile Communication Node hosted on an Aircraft."@en .
+
+gmns:SatelliteRelayNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:MobileCommunicationNode ;
+    rdfs:label "Satellite Relay Node"@en ;
+    skos:definition "A Mobile Communication Node hosted on a Satellite Artifact, whose position is propagated from Keplerian orbital elements."@en .
+
+gmns:GEOSatelliteRelayNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:SatelliteRelayNode ;
+    rdfs:label "GEO Satellite Relay Node"@en ;
+    skos:definition "A Satellite Relay Node hosted on a satellite in geostationary orbit."@en .
+
+gmns:LEOSatelliteRelayNode rdf:type owl:Class ;
+    rdfs:subClassOf gmns:SatelliteRelayNode ;
+    rdfs:label "LEO Satellite Relay Node"@en ;
+    skos:definition "A Satellite Relay Node hosted on a satellite in low Earth orbit."@en .
+
+# --- Host platforms: reuse CCO artifact classes directly ---
+# Aircraft            -> cco:ont00001043
+# Satellite Artifact  -> cco:ont00000352
+# Ground Vehicle      -> cco:ont00000618
+# Watercraft          -> cco:ont00000440
+# Facility            -> cco:ont00000192
+# Radio Communication Instrument -> cco:ont00000903
+# Radio Antenna       -> cco:ont00001192
+
+# --- Links ---
+
+gmns:CommunicationLink rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000995 ;  # CCO: Material Artifact
+    rdfs:label "Communication Link"@en ;
+    skos:definition "A Material Artifact or configured artifact pair that bears the function of conveying C2 Messages between exactly two Communication Nodes, characterized in the simulation by latency, bandwidth, and availability."@en ;
+    skos:editorialNote "MODELING DECISION FLAGGED FOR REVIEW: a physical line (fiber) is straightforwardly a Material Artifact; a wireless 'link' is a modeling construct denoting a transmitter-receiver channel configuration. An alternative treatment models wireless links as realizable dispositions of the participating Radio Communication Instruments. The artifact treatment is retained for parity with the simulator's data model; revisit if reasoning over link function becomes load-bearing."@en .
+
+gmns:FiberLink rdf:type owl:Class ;
+    rdfs:subClassOf gmns:CommunicationLink , cco:ont00000825 ;  # CCO: Telecommunication Network Line
+    rdfs:label "Fiber Link"@en ;
+    skos:definition "A Communication Link realized by a fiber-optic Telecommunication Network Line, with latency computed from WGS-84 ellipsoid distance at 200,000 km/s propagation."@en .
+
+gmns:WirelessCommunicationLink rdf:type owl:Class ;
+    rdfs:subClassOf gmns:CommunicationLink ;
+    rdfs:label "Wireless Communication Link"@en ;
+    skos:definition "A Communication Link realized by radio-frequency transmission between Radio Communication Instruments."@en .
+
+gmns:GEOSatelliteLink rdf:type owl:Class ;
+    rdfs:subClassOf gmns:WirelessCommunicationLink ;
+    rdfs:label "GEO Satellite Link"@en ;
+    skos:definition "A Wireless Communication Link relayed through a GEO Satellite Relay Node, with one-way latency of at least 270 milliseconds."@en .
+
+gmns:LEOSatelliteLink rdf:type owl:Class ;
+    rdfs:subClassOf gmns:WirelessCommunicationLink ;
+    rdfs:label "LEO Satellite Link"@en ;
+    skos:definition "A Wireless Communication Link relayed through a LEO Satellite Relay Node, with availability dependent on constellation coverage."@en .
+
+gmns:LineOfSightLink rdf:type owl:Class ;
+    rdfs:subClassOf gmns:WirelessCommunicationLink ;
+    rdfs:label "Line of Sight Link"@en ;
+    skos:definition "A Wireless Communication Link that is active only while a Mobile Communication Node is located within the coverage radius of the counterpart node."@en .
+
+gmns:SimulatedNetwork rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000998 ;  # CCO: Telecommunication Network
+    rdfs:label "Simulated Network"@en ;
+    skos:definition "A Telecommunication Network whose member nodes and links are represented in a GMNS scenario."@en .
+
+#################################################################
+# 2. EVENT LAYER — Occurrents recorded in the event log
+#################################################################
+
+gmns:ActOfC2MessageTransmission rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000402 ;  # CCO: Act of Communication
+    rdfs:label "Act of C2 Message Transmission"@en ;
+    skos:definition "An Act of Communication in which a C2 Message is conveyed from a source Communication Node toward a destination Communication Node over one or more Communication Links."@en .
+
+gmns:ActOfMessageRelay rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000402 ;  # CCO: Act of Communication
+    rdfs:label "Act of Message Relay"@en ;
+    skos:definition "An Act of Communication in which an intermediate Communication Node forwards a C2 Message along a routed path."@en .
+
+gmns:CommunicationOutage rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00001213 ;  # CCO: Stasis of Artifact Operationality
+    rdfs:label "Communication Outage"@en ;
+    skos:definition "A Stasis of Artifact Operationality during which a Communication Link is non-operational, generated in the simulation by a Poisson arrival process with exponential, log-normal, or fixed duration."@en .
+
+gmns:ActOfNodeMovement rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000357 ;  # CCO: Act of Motion
+    rdfs:label "Act of Node Movement"@en ;
+    skos:definition "An Act of Motion in which a Mobile Communication Node changes geospatial location by waypoint interpolation or orbital propagation."@en .
+
+#################################################################
+# 3. INFORMATION LAYER — Messages, specifications, measurements
+#################################################################
+
+gmns:C2Message rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00002010 ;  # CCO: Message
+    rdfs:label "C2 Message"@en ;
+    skos:definition "A Message that directs, coordinates, or reports on mission activity and is conveyed between Communication Nodes subject to simulated network constraints."@en .
+
+gmns:ScenarioSpecification rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000965 ;  # CCO: Prescriptive Information Content Entity
+    rdfs:label "Scenario Specification"@en ;
+    skos:definition "A Prescriptive Information Content Entity that prescribes the nodes, links, trajectories, traffic, and timeline of a simulation scenario."@en .
+
+gmns:RoleSpecification rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000965 ;  # CCO: Prescriptive Information Content Entity
+    rdfs:label "Role Specification"@en ;
+    skos:definition "A Prescriptive Information Content Entity, realized as a Markdown document, that prescribes the duties and communication procedures of an operational role and serves as the system prompt for an LLM agent emulating that role."@en .
+
+gmns:BehaviorTrace rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000853 ;  # CCO: Descriptive Information Content Entity
+    rdfs:label "Behavior Trace"@en ;
+    skos:definition "A Descriptive Information Content Entity that describes the time-stamped sequence of acts performed by an agent during a simulation scenario."@en .
+
+gmns:EntityIdentifier rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000686 ;  # CCO: Designative Information Content Entity
+    rdfs:label "Entity Identifier"@en ;
+    skos:definition "A Designative Information Content Entity that uniquely designates an entity or sub-entity in the ICAM Entity Registry."@en .
+
+# --- Measurements (CCO measurement pattern) ---
+
+gmns:LatencyMeasurement rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00001022 ;  # CCO: Ratio Measurement Information Content Entity
+    rdfs:label "Latency Measurement"@en ;
+    skos:definition "A Ratio Measurement Information Content Entity that is a measurement of the elapsed time between the sending and the delivery of a C2 Message."@en .
+
+gmns:BandwidthMeasurement rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00001022 ;  # CCO: Ratio Measurement Information Content Entity
+    rdfs:label "Bandwidth Measurement"@en ;
+    skos:definition "A Ratio Measurement Information Content Entity that is a measurement of the data-transfer capacity of a Communication Link."@en .
+
+gmns:OutageFractionMeasurement rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000845 ;  # CCO: Proportional Ratio Measurement Information Content Entity
+    rdfs:label "Outage Fraction Measurement"@en ;
+    skos:definition "A Proportional Ratio Measurement Information Content Entity that is a measurement of the fraction of scenario time during which a Communication Link was in a Communication Outage."@en .
+
+gmns:FidelityScore rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00001022 ;  # CCO: Ratio Measurement Information Content Entity
+    rdfs:label "Fidelity Score"@en ;
+    skos:definition "A Ratio Measurement Information Content Entity in the interval [0,1] that is a measurement of the degree to which an agent's Behavior Trace conforms to its reference Role Specification."@en ;
+    skos:editorialNote "Actions annotated 'network-constrained' (missed due to Communication Outages) are excluded from the measured process rather than counted as agent failures."@en .
+
+#################################################################
+# 4. AGENT LAYER — Agents and roles
+#################################################################
+
+gmns:NonPersonEntity rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00001017 ;  # CCO: Agent
+    rdfs:label "Non-Person Entity"@en ;
+    skos:definition "An Agent that is not a Person and holds an identity in the ICAM Entity Registry, including AI agents, software services, and autonomous platforms."@en ;
+    skos:editorialNote "Aligned with DoD ICAM usage of 'NPE'. Whether every NPE satisfies CCO's conditions on agency is flagged for ontology review; retained here because NPEs are first-class identity holders in the simulator."@en .
+
+gmns:OperationalRole rdf:type owl:Class ;
+    rdfs:subClassOf obo:BFO_0000023 ;  # BFO: role
+    rdfs:label "Operational Role"@en ;
+    skos:definition "A role borne by an Agent and realized in acts prescribed by a Role Specification."@en .
+
+gmns:AircrewRole rdf:type owl:Class ;
+    rdfs:subClassOf gmns:OperationalRole ;
+    rdfs:label "Aircrew Role"@en ;
+    skos:definition "An Operational Role realized in acts of operating an Aircraft and communicating per aircrew procedures."@en .
+
+gmns:GroundTeamRole rdf:type owl:Class ;
+    rdfs:subClassOf gmns:OperationalRole ;
+    rdfs:label "Ground Team Role"@en ;
+    skos:definition "An Operational Role realized in acts performed by personnel at a ground location, including drop-zone operations."@en .
+
+gmns:AirTrafficManagementRole rdf:type owl:Class ;
+    rdfs:subClassOf gmns:OperationalRole ;
+    rdfs:label "Air Traffic Management Role"@en ;
+    skos:definition "An Operational Role realized in acts of coordinating and deconflicting air traffic."@en .
+
+gmns:CommandStaffRole rdf:type owl:Class ;
+    rdfs:subClassOf gmns:OperationalRole ;
+    rdfs:label "Command Staff Role"@en ;
+    skos:definition "An Operational Role realized in acts of mission command, tasking, and reporting."@en .
+
+#################################################################
+# 5. ICAM LAYER — Credentials, authentication, policy
+#################################################################
+
+gmns:DigitalCertificate rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00002002 ;  # CCO: Certificate
+    rdfs:label "Digital Certificate"@en ;
+    skos:definition "A Certificate that cryptographically binds an Entity Identifier to a public key and has a lifecycle of issuance, expiry, and revocation."@en .
+
+gmns:AccessControlPolicy rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000965 ;  # CCO: Prescriptive Information Content Entity
+    rdfs:label "Access Control Policy"@en ;
+    skos:definition "A Prescriptive Information Content Entity that prescribes the conditions under which entities are permitted to send or receive messages or access resources."@en .
+
+gmns:PolicyDecision rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000965 ;  # CCO: Prescriptive Information Content Entity
+    rdfs:label "Policy Decision"@en ;
+    skos:definition "A Prescriptive Information Content Entity that is the output of an Act of Policy Decision and permits or denies a specific access request pursuant to an Access Control Policy."@en ;
+    skos:editorialNote "Placed under Prescriptive ICE because a PDP decision has deontic force over the enforcement point; an argument exists for Descriptive ICE. Flagged for review."@en .
+
+gmns:ActOfAuthentication rdf:type owl:Class ;
+    rdfs:subClassOf cco:ont00000402 ;  # CCO: Act of Communication
+    rdfs:label "Act of Authentication"@en ;
+    skos:definition "An Act of Communication realizing a first-contact cryptographic handshake (AUTH_REQUEST / AUTH_RESPONSE / AUTH_TIMEOUT) between two entities, subject to simulated network constraints."@en .
+
+gmns:ActOfPolicyDecision rdf:type owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;  # BFO: process
+    rdfs:label "Act of Policy Decision"@en ;
+    skos:definition "A process in which a Policy Decision Point evaluates an access request against an Access Control Policy and has a Policy Decision as output."@en .
+
+gmns:ActOfCredentialIssuance rdf:type owl:Class ;
+    rdfs:subClassOf obo:BFO_0000015 ;  # BFO: process
+    rdfs:label "Act of Credential Issuance"@en ;
+    skos:definition "A process in which a credential authority issues a Digital Certificate to an Agent, having that Digital Certificate as output."@en .
+
+#################################################################
+# 6. OBJECT PROPERTIES
+#    Reuse CCO/BFO relations wherever possible:
+#      agent in          -> cco:ont00001787
+#      is carrier of     -> obo:BFO_0000101
+#      prescribes        -> cco:ont00001942
+#      describes         -> cco:ont00001982
+#      is about          -> cco:ont00001808
+#      has input         -> cco:ont00001921
+#      has output        -> cco:ont00001986
+#      is a measurement of -> cco:ont00001966
+#      occurs at         -> cco:ont00001918
+#      participates in   -> obo:BFO_0000056
+#      realizes          -> obo:BFO_0000055
+#      designates        -> cco:ont00001916
+#      uses              -> cco:ont00001813
+#    Minted properties below are limited to simulation-specific structure.
+#################################################################
+
+gmns:hostedOn rdf:type owl:ObjectProperty ;
+    rdfs:label "hosted on"@en ;
+    rdfs:domain gmns:CommunicationNode ;
+    rdfs:range obo:BFO_0000040 ;  # BFO: material entity (Aircraft, Satellite Artifact, Facility, ...)
+    skos:definition "Relates a Communication Node to the platform or facility that physically hosts it."@en .
+
+gmns:connectsNode rdf:type owl:ObjectProperty ;
+    rdfs:label "connects node"@en ;
+    rdfs:domain gmns:CommunicationLink ;
+    rdfs:range gmns:CommunicationNode ;
+    skos:definition "Relates a Communication Link to a Communication Node at one of its two endpoints."@en .
+
+gmns:hasSourceNode rdf:type owl:ObjectProperty ;
+    rdfs:label "has source node"@en ;
+    rdfs:domain cco:ont00000402 ;  # CCO: Act of Communication
+    rdfs:range gmns:CommunicationNode ;
+    skos:definition "Relates an Act of Communication to the Communication Node from which the message originates."@en .
+
+gmns:hasDestinationNode rdf:type owl:ObjectProperty ;
+    rdfs:label "has destination node"@en ;
+    rdfs:domain cco:ont00000402 ;
+    rdfs:range gmns:CommunicationNode ;
+    skos:definition "Relates an Act of Communication to the Communication Node to which the message is addressed."@en .
+
+gmns:transmittedOver rdf:type owl:ObjectProperty ;
+    rdfs:label "transmitted over"@en ;
+    rdfs:domain cco:ont00000402 ;
+    rdfs:range gmns:CommunicationLink ;
+    skos:definition "Relates an Act of Communication to a Communication Link on its routed path."@en .
+
+gmns:boundToNode rdf:type owl:ObjectProperty ;
+    rdfs:label "bound to node"@en ;
+    rdfs:domain cco:ont00001017 ;  # CCO: Agent
+    rdfs:range gmns:CommunicationNode ;
+    skos:definition "Relates an Agent to the Communication Node through which all of its message traffic is constrained to pass."@en .
+
+gmns:issuedTo rdf:type owl:ObjectProperty ;
+    rdfs:label "issued to"@en ;
+    rdfs:domain gmns:DigitalCertificate ;
+    rdfs:range cco:ont00001017 ;
+    skos:definition "Relates a Digital Certificate to the Agent whose identity it certifies."@en .
+
+gmns:outageOf rdf:type owl:ObjectProperty ;
+    rdfs:label "outage of"@en ;
+    rdfs:domain gmns:CommunicationOutage ;
+    rdfs:range gmns:CommunicationLink ;
+    skos:definition "Relates a Communication Outage to the Communication Link that is non-operational during it."@en .
+
+#################################################################
+# 7. DATATYPE PROPERTIES (JSON-LD export shortcuts)
+#    These are documented syntactic sugar for the export layer; the
+#    normative representation of quantities is the CCO measurement
+#    pattern (Measurement ICE + is a measurement of + uses measurement
+#    unit). Shortcuts keep the MATLAB +io exporter and JSON-LD context
+#    simple.
+#################################################################
+
+gmns:simTimestampSeconds rdf:type owl:DatatypeProperty ;
+    rdfs:label "simulation timestamp (s)"@en ;
+    rdfs:range xsd:decimal ;
+    skos:definition "Simulation-clock time of an occurrent, in seconds from scenario start."@en .
+
+gmns:latencyMilliseconds rdf:type owl:DatatypeProperty ;
+    rdfs:label "latency (ms)"@en ;
+    rdfs:range xsd:decimal ;
+    skos:definition "Shortcut for the value of a Latency Measurement, in milliseconds."@en .
+
+gmns:bandwidthKbps rdf:type owl:DatatypeProperty ;
+    rdfs:label "bandwidth (kbps)"@en ;
+    rdfs:range xsd:decimal ;
+    skos:definition "Shortcut for the value of a Bandwidth Measurement, in kilobits per second."@en .
+
+gmns:fidelityScoreValue rdf:type owl:DatatypeProperty ;
+    rdfs:label "fidelity score value"@en ;
+    rdfs:range xsd:decimal ;
+    skos:definition "Shortcut for the value of a Fidelity Score, in [0,1]."@en .
+
+gmns:wgs84Latitude rdf:type owl:DatatypeProperty ;
+    rdfs:label "WGS-84 latitude"@en ;
+    rdfs:range xsd:decimal .
+
+gmns:wgs84Longitude rdf:type owl:DatatypeProperty ;
+    rdfs:label "WGS-84 longitude"@en ;
+    rdfs:range xsd:decimal .
+
+gmns:altitudeMeters rdf:type owl:DatatypeProperty ;
+    rdfs:label "altitude (m)"@en ;
+    rdfs:range xsd:decimal .
+
+gmns:networkConstrained rdf:type owl:DatatypeProperty ;
+    rdfs:label "network constrained"@en ;
+    rdfs:range xsd:boolean ;
+    skos:definition "True when an expected agent action was missed due to a Communication Outage and is therefore excluded from fidelity scoring."@en .

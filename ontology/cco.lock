@@ -1,0 +1,7 @@
+# Single-source pin of the Common Core Ontologies release used by all GMNS
+# ontology tooling (Req 13.4). Do not hard-code the CCO version anywhere else.
+cco_release: "2026-04-04"
+cco_merged_iri: "https://www.commoncoreontologies.org/CommonCoreOntologiesMerged"
+cco_version_iri: "https://www.commoncoreontologies.org/2026-04-04/CommonCoreOntologiesMerged"
+source_repo: "https://github.com/CommonCoreOntology/CommonCoreOntologies"
+bfo_standard: "ISO/IEC 21838-2:2021"
