@@ -16,8 +16,11 @@ replicate its behavior; we verify against first principles and compare informati
 
 The port exists to enable a standards-facing roadmap that is impractical in MATLAB:
 real UCI message exchange over the simulated network, C2SIM interoperation, BFO/CCO
-semantic exports, LangGraph agent emulation, and MCP exposure. Later this repo folds into
-the Semantic Architectures monorepo (the `acquisition-knowledge-system` umbrella).
+semantic exports, LangGraph agent emulation, and MCP exposure. GMNS is a component of the
+Acquisition Knowledge System (AKS, umbrella ADR 0007). The umbrella repo,
+`acquisition-knowledge-system`, holds specs and decisions only; it is not a monorepo. Whether
+GMNS ever folds into a monorepo, or shares its seams as versioned packages instead, is open
+(umbrella ADR 0008, proposed).
 
 ## Non-negotiable governance (violating these wastes work)
 
@@ -54,8 +57,12 @@ the Semantic Architectures monorepo (the `acquisition-knowledge-system` umbrella
 
 8. **Single-source CCO pin** (Req 13.4). The pinned CCO release lives only in
    `ontology/cco.lock`. All ontology tooling reads it there; never hard-code the version
-   elsewhere. The ontology files `ontology/gmns.ttl` and `ontology/gmns-shapes.ttl` already
-   exist (authored separately) and validate against CCO merged 2026-04-04.
+   elsewhere. It is the AKS shared pin (umbrella ADR 0006): change it in the umbrella's
+   ontology steering first, never here alone. CCO is vendored in `ontology/imports/` (git-lfs),
+   hash-checked against `cco.lock`, and resolved through `ontology/catalog-v001.xml`; never
+   load it over the network. The ontology files `ontology/gmns.ttl` and
+   `ontology/gmns-shapes.ttl` already exist (authored separately) and validate against the
+   pinned release.
 
 ## Stack and layout
 
@@ -93,7 +100,8 @@ scenarios/   .kiro/specs/python-port/   CLAUDE.md   pyproject.toml
   the specs encode decisions with reasons, and a few are counterintuitive on purpose
   (MATLAB-as-baseline-not-oracle is the big one). Surfacing a real spec gap is useful;
   silently coding around it is not.
-- **Do not fold into the monorepo** (tasks 33–34) until M1. Build here as a standalone repo;
+- **Do not fold into a monorepo** (tasks 33–34) until M1, and not at all unless umbrella
+  ADR 0008 chooses that model. Build here as a standalone repo;
   the readiness constraints above make the later move mechanical.
 
 ## Quick self-check before committing

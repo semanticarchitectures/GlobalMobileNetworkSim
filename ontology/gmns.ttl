@@ -25,8 +25,9 @@ simulation. Extends Basic Formal Ontology (ISO/IEC 21838-2) via the Common Core
 Ontologies (CCO), per the January 2024 DoD/IC CDO Council direction establishing
 BFO and CCO as baseline standards for formal DoD and IC ontology development.
 
-Parent-class IRIs verified against CCO merged release 2026-04-04
-(https://github.com/CommonCoreOntology/CommonCoreOntologies). CCO 2.x uses
+Parent-class IRIs verified against the CCO merged release pinned in
+ontology/cco.lock (https://github.com/CommonCoreOntology/CommonCoreOntologies),
+resolved offline through ontology/catalog-v001.xml. CCO 2.x uses
 opaque numeric IRIs; the human-readable CCO label is given in an rdfs:comment
 on each subclass axiom's child term below.
 

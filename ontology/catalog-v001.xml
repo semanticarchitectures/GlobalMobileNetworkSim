@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Resolves CCO imports to the vendored, hash-pinned file so no ontology is loaded over
+     the network. Used by ROBOT and Protege. The version itself is recorded only in
+     cco.lock (Req 13.4); this catalog names files, not releases. -->
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <uri name="https://www.commoncoreontologies.org/CommonCoreOntologiesMerged" uri="imports/CommonCoreOntologiesMerged.ttl"/>
+</catalog>
