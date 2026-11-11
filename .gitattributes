@@ -1,0 +1,10 @@
+# Comparison datasets and binary test artifacts via git-lfs from first commit (Req 13.3).
+# CI fails on >1 MB files committed outside LFS.
+tests/comparison/** filter=lfs diff=lfs merge=lfs -text
+*.mat filter=lfs diff=lfs merge=lfs -text
+*.npz filter=lfs diff=lfs merge=lfs -text
+*.parquet filter=lfs diff=lfs merge=lfs -text
+# Turtle ontology files are text — keep them diffable, do NOT put in LFS.
+# Exception: vendored third-party ontologies (not authored here, never diffed) exceed the
+# 1 MB limit, so they go through LFS. GMNS's own .ttl files stay out of LFS.
+ontology/imports/*.ttl filter=lfs diff=lfs merge=lfs -text

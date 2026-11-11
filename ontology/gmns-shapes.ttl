@@ -1,0 +1,104 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix gmns: <https://semanticarchitectures.com/ont/gmns/> .
+@prefix cco: <https://www.commoncoreontologies.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+# ============================================================
+# GMNS SHACL Shapes — semantic acceptance criteria for exported
+# event logs and reports. Run in CI with pyshacl against the
+# RDF/JSON-LD produced by +io. Each shape corresponds to a
+# correctness property in .kiro/specs design.md (Properties 27-30).
+# ============================================================
+
+# P27a — Every message transmission act names a source and destination node
+gmns:MessageTransmissionShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:ActOfC2MessageTransmission ;
+    sh:property [
+        sh:path gmns:hasSourceNode ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class gmns:CommunicationNode ;
+        sh:message "Transmission act must have exactly one source Communication Node." ;
+    ] ;
+    sh:property [
+        sh:path gmns:hasDestinationNode ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class gmns:CommunicationNode ;
+        sh:message "Transmission act must have exactly one destination Communication Node." ;
+    ] ;
+    sh:property [
+        sh:path gmns:simTimestampSeconds ;
+        sh:minCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:message "Transmission act must carry a non-negative simulation timestamp." ;
+    ] .
+
+# P27b — Links connect exactly two nodes
+gmns:CommunicationLinkShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:CommunicationLink ;
+    sh:property [
+        sh:path gmns:connectsNode ;
+        sh:minCount 2 ; sh:maxCount 2 ;
+        sh:class gmns:CommunicationNode ;
+        sh:message "A Communication Link must connect exactly two Communication Nodes." ;
+    ] .
+
+# P28 — Latency measurements are non-negative; GEO links respect the physical floor
+gmns:LatencyMeasurementShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:LatencyMeasurement ;
+    sh:property [
+        sh:path gmns:latencyMilliseconds ;
+        sh:minCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:message "Latency value must be present and non-negative." ;
+    ] .
+
+# P29 — Every outage is an outage of exactly one link
+gmns:OutageShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:CommunicationOutage ;
+    sh:property [
+        sh:path gmns:outageOf ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class gmns:CommunicationLink ;
+        sh:message "A Communication Outage must be an outage of exactly one Communication Link." ;
+    ] .
+
+# P30a — Every fidelity score is a measurement in [0,1] and is about some process
+gmns:FidelityScoreShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:FidelityScore ;
+    sh:property [
+        sh:path gmns:fidelityScoreValue ;
+        sh:minCount 1 ;
+        sh:datatype xsd:decimal ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 1 ;
+        sh:message "Fidelity score must be a decimal in [0,1]." ;
+    ] .
+
+# P30b — Every certificate is issued to exactly one agent
+gmns:CertificateShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:DigitalCertificate ;
+    sh:property [
+        sh:path gmns:issuedTo ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "A Digital Certificate must be issued to exactly one Agent." ;
+    ] .
+
+# P30c — Every agent participating in a scenario is bound to a node
+gmns:AgentBindingShape
+    a sh:NodeShape ;
+    sh:targetClass gmns:NonPersonEntity ;
+    sh:property [
+        sh:path gmns:boundToNode ;
+        sh:minCount 1 ;
+        sh:class gmns:CommunicationNode ;
+        sh:message "Every agent must be bound to at least one Communication Node (all traffic is network-constrained)." ;
+    ] .

@@ -1,0 +1,27 @@
+# Single-source pin of the Common Core Ontologies release used by all GMNS
+# ontology tooling (Req 13.4). Do not hard-code the CCO version anywhere else.
+#
+# This is the AKS shared pin (umbrella ADR 0006; table "Pinned versions" in
+# acquisition-knowledge-system/.kiro/steering/ontology.md). Change it there first,
+# then here, never here alone.
+cco_release: "2026-08-13"
+cco_tag: "v2.2"
+cco_merged_iri: "https://www.commoncoreontologies.org/CommonCoreOntologiesMerged"
+cco_version_iri: "https://www.commoncoreontologies.org/2026-08-13/CommonCoreOntologiesMerged"
+source_repo: "https://github.com/CommonCoreOntology/CommonCoreOntologies"
+source_commit: "0bc7d33e1bc09fd4693366119ab4e03cb0340042"
+source_path: "src/cco-merged/CommonCoreOntologiesMerged.ttl"
+license: "BSD 3-Clause (ontology/imports/LICENSE-CCO)"
+# Vendored copy, resolved offline through ontology/catalog-v001.xml. Tooling must
+# check this hash before loading the file (stored in git-lfs; see .gitattributes).
+vendored_file: "imports/CommonCoreOntologiesMerged.ttl"
+vendored_sha256: "a9453382b25b40781c181d6ba44981f228abb76d90d548846713adba9baadb42"
+bfo_standard: "ISO/IEC 21838-2:2021"
+# BFO is embedded in the CCO merged file (it has no owl:imports). The embedded BFO is
+# logically identical to the AKS shared BFO pin (BFO-2020 tag release-2024-01-29);
+# it differs only in annotations. GMNS does not import BFO separately.
+bfo_shared_pin: "release-2024-01-29"
+# Verification record for this pin (2026-11-06): all 19 CCO/BFO IRIs used by
+# gmns.ttl exist in this release with unchanged IRIs and labels; gmns.ttl merged with
+# this file is consistent under HermiT (ROBOT 1.9.8), with no unsatisfiable classes.
+previous_release: "2026-04-04"
