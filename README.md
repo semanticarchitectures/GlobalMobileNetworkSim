@@ -6,6 +6,18 @@ A MATLAB-based discrete-event simulation framework for modeling global-scale het
 
 ---
 
+## Part of the Acquisition Knowledge System
+
+GlobalMobileNetworkSim (GMNS) is a component of the [Acquisition Knowledge System (AKS)](https://github.com/semanticarchitectures/acquisition-knowledge-system),
+a demonstration of AI architecting and simulating Air Force enterprise operations, at scale and
+realistically, and then being used in that enterprise, safely and under human authority.
+
+Its role in AKS: the network transport and standards-conformant C2 messaging
+testbed (AKS ADR 0007): the simulated fiber, GEO, LEO and line-of-sight network that AKS's
+simulations communicate over (milestone D2), real UCI messages under latency and outage (D4), and a
+planned SISO C2SIM gateway (D5). Cross-component specs, the shared ontology and decisions live in the
+umbrella repo.
+
 ## Overview
 
 GlobalMobileNetworkSim models the communication infrastructure available to entities operating across a global network — from aircraft and ground teams in remote areas to command centers connected via fiber, satellite, and line-of-sight radio. The simulator captures realistic latency, outage behavior, and bandwidth constraints across all link types.
