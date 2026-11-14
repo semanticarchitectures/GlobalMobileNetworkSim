@@ -6,6 +6,8 @@
 
 > **Amendment A2 (2026-07-23) — Verification strategy revision.** Task 2 removed (no draw-file instrumentation); tasks 1, 3, 5, 7, 16, 17, 19, 26 amended; Phase 3 retitled; M1 redefined. See requirements.md Req 7 (rewritten) and design.md D2/D6/D9.
 
+> **Amendment A3 (2026-11-12) — Port deferred; no task is active.** None of the tasks below has been started and none should be started as written. The Python port is deferred and MATLAB is authoritative (see requirements.md Amendment A3; umbrella AKS ADR 0011). This task list targets a MATLAB codebase that has since grown (the `+fabric`, `+data`, and `+security` packages did not exist when it was written), so reactivating the port requires re-scoping this list against the then-current MATLAB codebase first. Treat the checkboxes below as a dormant plan, not a work queue.
+
 ## Phase 0 — Freeze and Extract (baseline preparation)
 
 - [ ] 1. *(Amended A2)* Tag the MATLAB repository as `matlab-baseline-v1.0`; record commit hash in this spec. *(Req 7.5)*
