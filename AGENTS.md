@@ -3,6 +3,16 @@
 Conventions for AI coding tools working in this repo. The Kiro specs in `.kiro/specs/` are the
 source of truth for what is built.
 
+## Authoritative implementation
+
+The **MATLAB codebase is the authoritative, actively-developed implementation** of GMNS.
+The Python port under `.kiro/specs/python-port/` is **deferred and not started** — it carries
+Amendment A3 marking the whole spec dormant, and its earlier Amendment A2 (which had made
+Python primary) is superseded. Do not start Python work or treat the python-port tasks as a
+work queue. The MATLAB engine spec is `.kiro/specs/matlab-network-sim/`; the `+fabric`,
+`+data`, and `+security` packages are governed by their own specs under `.kiro/specs/`.
+The umbrella records this as AKS ADR 0011. See `CLAUDE.md` for the full authority note.
+
 ## Umbrella context (Acquisition Knowledge System)
 
 - This repo is a component of the Acquisition Knowledge System: https://github.com/semanticarchitectures/acquisition-knowledge-system.

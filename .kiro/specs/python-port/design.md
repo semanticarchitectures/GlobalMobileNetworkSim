@@ -6,6 +6,8 @@
 
 > **Amendment A2 (2026-07-23) — Verification strategy revision.** MATLAB demoted from oracle to comparison baseline; D2 simplified (draw-file replay removed); D6 authority table rewritten; D9 relabeled; §Parity Tolerances replaced by §Verification Benchmarks and Comparison Disposition; properties P32/P36 rewritten.
 
+> **Amendment A3 (2026-11-12) — Port deferred; MATLAB is authoritative.** The Python port is not started and the MATLAB implementation is authoritative (see requirements.md Amendment A3; umbrella AKS ADR 0011). The D6 authority table is reversed: MATLAB is the authoritative source, not a baseline. Every design decision below (D1–D9) describes a deferred plan; none constrains current MATLAB work. The design is not rewritten line-by-line because no Python code exists to govern — reactivation requires re-scoping against the then-current MATLAB codebase (which has grown by the `+fabric`, `+data`, and `+security` packages since this document was written) and against the AKS umbrella's shared CCO 2.2 pin.
+
 ## Overview
 
 Python is the primary, authoritative GMNS implementation; the MATLAB branch remains alive as a frozen comparison baseline with no equivalence claim. The design optimizes for three things: (1) verifiable engine correctness against first-principles ground truth and published reference vectors, cross-checked once by a dispositioned differential comparison with MATLAB, (2) a stable core that the standards-facing layers (semantics, UCI, C2SIM, agents, MCP) attach to without engine modification, and (3) deployability into government evaluation environments without commercial licenses.
